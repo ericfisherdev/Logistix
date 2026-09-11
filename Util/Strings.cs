@@ -13,6 +13,8 @@ namespace Logistix.Util
             RegisterString("PLOGrequest", "Request", "请求");
             RegisterString("PLOGrecycle", "Recycle", "回收");
             RegisterString("PLOGenableFuel", "Use in mecha fuel chamber", "用于机械燃料室");
+            RegisterString("PLOGSettingsTipTitle", "Settings", "设置");
+            RegisterString("PLOGSettingsTipText", "Open the legacy Logistix settings window", "打开旧版设置窗口");
 
             RegisterString("PLOGCurrent", "Current", "当前");
             RegisterString("PLOGUpdated", "Updated", "新的");

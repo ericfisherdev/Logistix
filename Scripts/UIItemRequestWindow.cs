@@ -59,6 +59,12 @@ namespace Logistix.Scripts
         public RectTransform enableFuelContainer;
         public Toggle enableFuelToggle;
 
+        // Opens the legacy IMGUI settings window (ToggleLegacyRequestWindow). Built and assigned
+        // by RequesterWindow.PopulateWindow alongside the other #20 additive controls; also left
+        // null-tolerant since it shares their build path and can fail to build the same way a
+        // missing donor makes the rest of them null.
+        public UIButton settingsButton;
+
         private UIItemTip screenTip;
         private float mouseInTime;
         private EventTrigger eventTriggerItem;
@@ -126,6 +132,13 @@ namespace Logistix.Scripts
             SetMaterialProps();
             typeButton1.data = 1;
             typeButton2.data = 2;
+            // OnPlayPauseClick(int) treats 0 as pause and 1 as play; each button's own .data is
+            // what OnPlayPauseClick actually receives (see the typeButton1/2 precedent above), so
+            // clicking either one must not depend on which one happened to fire.
+            if (pauseButton != null)
+                pauseButton.data = 0;
+            if (playButton != null)
+                playButton.data = 1;
             eventTriggerItem = itemBg.gameObject.AddComponent<EventTrigger>();
             {
                 EventTrigger.Entry pointerDown = new EventTrigger.Entry();
@@ -232,6 +245,21 @@ namespace Logistix.Scripts
                     uiTabButton.button.onClick += OnTypeButtonClick;
                 }
             }
+
+            // #20 additive controls; each is independently optional (see the field comments), so
+            // each wiring is guarded rather than assuming all of them built successfully together.
+            if (maxPlusButton != null)
+                maxPlusButton.onClick += OnMaxPlusButtonClick;
+            if (maxMinusButton != null)
+                maxMinusButton.onClick += OnMaxMinusButtonClick;
+            if (pauseButton != null)
+                pauseButton.onClick += OnPlayPauseClick;
+            if (playButton != null)
+                playButton.onClick += OnPlayPauseClick;
+            if (settingsButton != null)
+                settingsButton.onClick += OnSettingsButtonClick;
+            if (enableFuelToggle != null)
+                enableFuelToggle.onValueChanged.AddListener(OnFuelToggleValueChanged);
         }
 
         public override void _OnUnregEvent()
@@ -248,7 +276,28 @@ namespace Logistix.Scripts
                     uiTabButton.button.onClick -= OnTypeButtonClick;
                 }
             }
+
+            if (maxPlusButton != null)
+                maxPlusButton.onClick -= OnMaxPlusButtonClick;
+            if (maxMinusButton != null)
+                maxMinusButton.onClick -= OnMaxMinusButtonClick;
+            if (pauseButton != null)
+                pauseButton.onClick -= OnPlayPauseClick;
+            if (playButton != null)
+                playButton.onClick -= OnPlayPauseClick;
+            if (settingsButton != null)
+                settingsButton.onClick -= OnSettingsButtonClick;
+            if (enableFuelToggle != null)
+                enableFuelToggle.onValueChanged.RemoveListener(OnFuelToggleValueChanged);
         }
+
+        private void OnSettingsButtonClick(int whatever) => ToggleLegacyRequestWindow();
+
+        // Toggle.onValueChanged passes the new isOn state, but OnToggleEnableFuelClick reads
+        // enableFuelToggle.isOn itself and ignores its argument, so this only needs to adapt the
+        // delegate shape (UnityAction<bool> vs the UIButton-style Action<int> every other handler
+        // in this class uses).
+        private void OnFuelToggleValueChanged(bool isOn) => OnToggleEnableFuelClick(0);
 
         // 0 for pause, 1 for play
         public void OnPlayPauseClick(int playOrPause)
@@ -340,6 +389,12 @@ namespace Logistix.Scripts
             minPlusButton.button.interactable = true;
             SetInteractable(maxMinusButton, true);
             SetInteractable(maxPlusButton, true);
+            // The donor Save button these are cloned from can be non-interactable at clone time
+            // (e.g. no recipe selected on the live replicator) -- that stale state would
+            // otherwise carry over permanently onto the clones (see #6's review finding on
+            // capturing donor state). Force it every frame like every other control above.
+            SetInteractable(pauseButton, true);
+            SetInteractable(playButton, true);
             SyncPlayPauseButtons();
 
             if (!showTips)

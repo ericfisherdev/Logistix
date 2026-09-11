@@ -57,6 +57,21 @@ namespace Logistix.UI
         }
 
         /// <summary>
+        /// Clones an arbitrary donor <see cref="Component"/> (e.g. a <see cref="UIButton"/> used
+        /// as a stand-in for a control that has no dedicated prefab of its own, such as the
+        /// Recycle spinner or the Settings button). Unlike <see cref="CloneText"/> this does not
+        /// touch <c>Localizer</c>s or set any value -- callers that clone a component carrying a
+        /// child <see cref="Text"/> must call <see cref="StripLocalizers"/> themselves before
+        /// relabeling it.
+        /// </summary>
+        public static T CloneComponent<T>(T template, Transform parent, string name) where T : Component
+        {
+            var clone = Object.Instantiate(template, parent, false);
+            clone.name = name;
+            return clone;
+        }
+
+        /// <summary>
         /// Turns off every inspector-assigned (persistent) listener on a cloned <see cref="Button"/>.
         /// <see cref="UnityEngine.Events.UnityEventBase.RemoveAllListeners"/> only clears
         /// listeners added at runtime via <c>AddListener</c>; persistent listeners serialized on
@@ -65,12 +80,22 @@ namespace Logistix.UI
         /// inside the cloned hierarchy but leaves references to external objects untouched. Left
         /// alone, a cloned button silently drives the original DSP window instead of the mod's.
         /// </summary>
-        public static void DisablePersistentListeners(Button button)
+        public static void DisablePersistentListeners(Button button) => DisablePersistentListeners(button.onClick);
+
+        /// <summary>
+        /// Same hazard as <see cref="DisablePersistentListeners(Button)"/>, for a cloned
+        /// <see cref="Toggle"/> (the fuel toggle donor, <c>UIPlayerDeliveryPanel.deliveryToggle</c>,
+        /// carries an inspector-assigned <c>onValueChanged</c> listener that targets the real
+        /// delivery panel's own toggle handler -- left enabled, clicking the cloned fuel toggle
+        /// would silently mutate the player's actual delivery settings).
+        /// </summary>
+        public static void DisablePersistentListeners(Toggle toggle) => DisablePersistentListeners(toggle.onValueChanged);
+
+        private static void DisablePersistentListeners(UnityEngine.Events.UnityEventBase unityEvent)
         {
-            var onClick = button.onClick;
-            for (var i = 0; i < onClick.GetPersistentEventCount(); i++)
+            for (var i = 0; i < unityEvent.GetPersistentEventCount(); i++)
             {
-                onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+                unityEvent.SetPersistentListenerState(i, UnityEventCallState.Off);
             }
         }
     }
