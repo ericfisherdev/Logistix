@@ -1,4 +1,9 @@
 ﻿using NebulaAPI;
+using NebulaAPI.DataStructures;
+using NebulaAPI.GameState;
+using NebulaAPI.Interfaces;
+using NebulaAPI.Networking;
+using NebulaAPI.Packets;
 using UnityEngine;
 
 namespace PersonalLogistics.Nebula.Packets

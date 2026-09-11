@@ -1,5 +1,10 @@
 ﻿using System.Reflection;
 using NebulaAPI;
+using NebulaAPI.DataStructures;
+using NebulaAPI.GameState;
+using NebulaAPI.Interfaces;
+using NebulaAPI.Networking;
+using NebulaAPI.Packets;
 using PersonalLogistics.ModPlayer;
 using PersonalLogistics.Nebula.Client;
 using PersonalLogistics.Util;
