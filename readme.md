@@ -182,12 +182,12 @@ the [DSPModSave](https://dsp.thunderstore.io/package/CommonAPI/DSPModSave/) mod.
 Next, install the [Nebula Multiplayer Mod API](https://dsp.thunderstore.io/package/nebula/NebulaMultiplayerModApi/) mod
 Then, extract the archive file and drag `Logistix.dll` into the `BepInEx/plugins` directory.
 
-Dependencies (Thunderstore versions this release was built against):
+Dependencies (declared in the package `manifest.json`, generated from the csproj pins):
 
 * `xiaoye97-BepInEx-5.4.17`
-* `xiaoye97-LDBTool-3.0.3`
-* `CommonAPI-CommonAPI-1.6.7`
-* `CommonAPI-DSPModSave-1.2.2`
+* `xiaoye97-LDBTool-3.0.0`
+* `CommonAPI-CommonAPI-1.6.5`
+* `CommonAPI-DSPModSave-1.2.0`
 * `nebula-NebulaMultiplayerModApi-2.1.0`
 
 #### Mod manager

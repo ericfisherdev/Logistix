@@ -55,6 +55,8 @@
 
         <Error Condition="!Exists('icon.png')" Text="ThunderstorePackage: icon.png is required at the repo root to build a Thunderstore package." />
         <Error Condition="!Exists('readme.md')" Text="ThunderstorePackage: readme.md is required at the repo root to build a Thunderstore package." />
+        <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^[0-9]+\.[0-9]+\.[0-9]+$'))"
+               Text="ThunderstorePackage: &lt;Version&gt; is '$(Version)' but Thunderstore requires a strict Major.Minor.Patch version_number." />
 
         <RemoveDir Directories="$(ThunderstoreStagingDir)" Condition="Exists('$(ThunderstoreStagingDir)')" />
         <MakeDir Directories="$(ThunderstoreStagingDir)" />
