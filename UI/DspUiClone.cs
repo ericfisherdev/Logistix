@@ -41,6 +41,7 @@ namespace Logistix.UI
             if (!ImageConversion.LoadImage(texture, buffer))
             {
                 Log.Warn($"Failed to decode embedded resource: {logicalName}");
+                Object.Destroy(texture);
                 return null;
             }
 
