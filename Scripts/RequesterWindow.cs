@@ -64,7 +64,7 @@ namespace Logistix.Scripts
         /// <summary>
         /// Builds the request window by cloning <c>UIGame.replicator</c> (the live DSP
         /// replicator window) instead of loading <c>Assets/prefab/Request Window.prefab</c> from
-        /// the unloadable Unity 2018 <c>pui</c> AssetBundle. See #1/#6/#17. Leaves
+        /// the unloadable Unity 2018 <c>pui</c> asset bundle. See #1/#6/#17. Leaves
         /// <see cref="_instanceGo"/>/<see cref="uiItemRequestWindow"/> null and retries on the
         /// next frame if the donor isn't ready yet, instead of the unguarded null-dereference
         /// chain the prefab-load code used to have. A build failure sets
@@ -357,8 +357,9 @@ namespace Logistix.Scripts
 
         /// <summary>
         /// Clone of typeButton2 (the Buildings tab), reused purely for its DSP-styled UIButton
-        /// chrome. Keeps the donor's own icon; swapping it for the embedded Logistix logo is
-        /// #18's AssetBundle-removal work, not this issue's.
+        /// chrome. Keeps the donor's own icon; #18 only swapped the menu-button logo (see
+        /// <see cref="DspUiClone.LoadEmbeddedSprite"/>) to an embedded resource, so this
+        /// Settings-tab icon is unchanged.
         /// </summary>
         private static void BuildSettingsButton(UIItemRequestWindow uiItemRequest, UIButton typeButton2)
         {

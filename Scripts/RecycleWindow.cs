@@ -19,7 +19,7 @@ namespace Logistix.Scripts
     /// Recycle panel: a 1x10 <see cref="UIStorageGrid"/> hung under the inventory window,
     /// built by cloning <c>UIGame.inventoryWindow.inventory</c> instead of loading
     /// <c>Assets/Prefab/Player Inventory Recycle.prefab</c> from the unloadable Unity 2018
-    /// <c>pui</c> AssetBundle. See #1/#6/#16.
+    /// <c>pui</c> asset bundle. See #1/#6/#16.
     /// </summary>
     public class RecycleWindow : ManualBehaviour
     {
@@ -166,7 +166,7 @@ namespace Logistix.Scripts
         /// Builds the recycle panel programmatically by cloning
         /// <c>UIGame.inventoryWindow.inventory</c> into a panel hung under the inventory
         /// window, replacing the old load of the (unloadable on 0.10.34) Unity 2018
-        /// AssetBundle prefab. Leaves <see cref="_instanceGo"/>/<see cref="uiStorageGrid"/>
+        /// asset bundle prefab. Leaves <see cref="_instanceGo"/>/<see cref="uiStorageGrid"/>
         /// null and retries on the next open if the inventory window isn't ready yet, instead
         /// of the unguarded null-dereference chain the prefab-load code used to have.
         /// </summary>
@@ -441,7 +441,7 @@ namespace Logistix.Scripts
         }
 
 
-        public void Unload(bool unloadAssetBundle)
+        public void Unload()
         {
             if (uiStorageGrid != null)
             {
