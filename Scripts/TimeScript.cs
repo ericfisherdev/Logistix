@@ -20,7 +20,7 @@ namespace PersonalLogistics.Scripts
         private bool _iconsLoaded;
 
         // so we can change it using runtime editor
-        public static Language _testLanguageOverride = Localization.language;
+        public static Localization.Language _testLanguageOverride = Localization.language;
         private static readonly Dictionary<string, DateTime> _lastFailureMessageTime = new();
         private static readonly Dictionary<string, DateTime> _itemNameFirstShownFailureMessageTime = new();
         private int _loadFailureReadmeReferenceMentionedCountDown = 5;
@@ -70,7 +70,7 @@ namespace PersonalLogistics.Scripts
             {
                 if (PluginConfig.testOverrideLanguage.Value != "" && _testLanguageOverride.ToString() != PluginConfig.testOverrideLanguage.Value)
                 {
-                    if (Enum.TryParse(PluginConfig.testOverrideLanguage.Value, true, out Language newLang))
+                    if (Enum.TryParse(PluginConfig.testOverrideLanguage.Value, true, out Localization.Language newLang))
                     {
                         _testLanguageOverride = newLang;
                     }
