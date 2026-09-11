@@ -210,7 +210,7 @@ namespace Logistix.Scripts
             var allButtons = go.GetComponentsInChildren<Button>(true);
             foreach (var button in allButtons)
             {
-                DspUiClone.DisablePersistentListeners(button);
+                DspUiClone.DisablePersistentListeners(button, go.transform);
             }
 
             WireCloseButton(go, uiItemRequest, allButtons, typeButton1, typeButton2, minPlusButton, minMinusButton, confirmButton,
@@ -394,32 +394,50 @@ namespace Logistix.Scripts
                 return;
             }
 
-            var parent = multiValueText.transform.parent;
+            // OnSelectedItemChange shows/hides fuel controls by toggling enableFuelContainer's
+            // GameObject wholesale, so the toggle and its label must share one container rather
+            // than being independently positioned siblings -- otherwise the label stays on screen
+            // for every non-fuel item once the toggle itself is hidden.
+            var anchor = multiValueText.rectTransform.anchoredPosition;
+            var containerGo = new GameObject("fuel-toggle-container", typeof(RectTransform));
+            containerGo.transform.SetParent(multiValueText.transform.parent, false);
+            var container = (RectTransform)containerGo.transform;
+            container.sizeDelta = new Vector2(200, 30);
+            container.anchoredPosition = anchor + new Vector2(0, -140);
+
             // Left inactive (CloneInactive's own contract): only OnSelectedItemChange/_OnCreate
             // decide when this is actually shown, based on whether the selected item is a fuel
             // item and PluginConfig.addFuelToMecha is on.
-            var clone = DspUiClone.CloneInactive(deliveryToggleDonor.gameObject, parent, "fuel-toggle");
+            var clone = DspUiClone.CloneInactive(deliveryToggleDonor.gameObject, container, "fuel-toggle");
             var clonedToggle = clone.GetComponent<UIToggle>();
             if (clonedToggle == null || clonedToggle.toggle == null)
             {
                 Log.Warn("Requester window: cloned fuel toggle is missing its UIToggle/Toggle component; fuel toggle will not be built");
-                Destroy(clone);
+                // Immediate for the same reason as DestroyChildIfNotNull: the Button sweep and
+                // WireCloseButton later in PopulateWindow must not still see this subtree.
+                DestroyImmediate(containerGo);
                 return;
             }
 
             // The donor's inspector-assigned onValueChanged listener still targets the real
             // UIPlayerDeliveryPanel.OnDeliveryToggleChange after cloning (same hazard as the
-            // Button persistent-listener issue DisablePersistentListeners(Button) already guards
-            // against elsewhere in this method) -- left enabled, clicking this clone would
-            // silently mutate the player's actual delivery settings.
-            DspUiClone.DisablePersistentListeners(clonedToggle.toggle);
+            // Button persistent-listener issue DisablePersistentListeners(Button, Transform)
+            // already guards against elsewhere in this method) -- left enabled, clicking this
+            // clone would silently mutate the player's actual delivery settings. Scoped to the
+            // toggle's own clone so a listener DSP wired *within* that hierarchy (e.g. the
+            // UIToggle's own on/off sprite swap) is left alone rather than disabled by mistake.
+            DspUiClone.DisablePersistentListeners(clonedToggle.toggle, clone.transform);
 
             // The donor is the player's real delivery toggle, so its current isOn reflects
             // whatever the player has that set to right now, not this item's fuel state (see
             // #16's review finding on capturing donor state instead of trusting whatever it
             // happens to hold at clone time). OnSelectedItemChange sets the real value once an
             // item is selected; until then this must not show a leftover value from the donor.
-            clonedToggle.toggle.isOn = false;
+            // SetIsOnWithoutNotify rather than a plain assignment: _OnRegEvent (which wires
+            // OnFuelToggleValueChanged) hasn't run yet at this point in the build, so nothing is
+            // listening either way today, but the reset shouldn't depend on that lifecycle detail
+            // staying true.
+            clonedToggle.toggle.SetIsOnWithoutNotify(false);
 
             // Neither sprite is guaranteed non-null on every donor styling, and a toggle with both
             // null renders identically on/off (see #6's review finding); fall back to a colour
@@ -431,13 +449,12 @@ namespace Logistix.Scripts
                 clonedToggle.toggle.onValueChanged.AddListener(isOn => image.color = isOn ? Color.green : Color.gray);
             }
 
-            var anchor = multiValueText.rectTransform.anchoredPosition;
-            clonedToggle.rectTransform.anchoredPosition = anchor + new Vector2(0, -140);
+            clonedToggle.rectTransform.anchoredPosition = Vector2.zero;
 
-            var fuelLabel = DspUiClone.CloneText(multiValueText, parent, "fuel-toggle-label", "PLOGenableFuel".Translate());
-            fuelLabel.rectTransform.anchoredPosition = anchor + new Vector2(40, -140);
+            var fuelLabel = DspUiClone.CloneText(multiValueText, container, "fuel-toggle-label", "PLOGenableFuel".Translate());
+            fuelLabel.rectTransform.anchoredPosition = new Vector2(40, 0);
 
-            uiItemRequest.enableFuelContainer = clonedToggle.rectTransform;
+            uiItemRequest.enableFuelContainer = container;
             uiItemRequest.enableFuelToggle = clonedToggle.toggle;
         }
 

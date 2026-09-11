@@ -39,7 +39,13 @@ namespace Logistix.UI
         {
             foreach (var localizer in go.GetComponents<Localizer>())
             {
-                Object.Destroy(localizer);
+                // Immediate: every caller strips while the clone is still inactive (CloneInactive)
+                // and the whole window is activated later in the same frame (PopulateWindow's
+                // go.SetActive(true)). A deferred Destroy() only takes effect at end of frame, so
+                // the Localizer would still be alive for that first OnEnable and -- if it reapplies
+                // its translation key on enable the way this class assumes -- would silently
+                // overwrite the text just assigned here.
+                Object.DestroyImmediate(localizer);
             }
         }
 
@@ -72,31 +78,42 @@ namespace Logistix.UI
         }
 
         /// <summary>
-        /// Turns off every inspector-assigned (persistent) listener on a cloned <see cref="Button"/>.
+        /// Turns off every inspector-assigned (persistent) listener on a cloned <see cref="Button"/>
+        /// whose target lives outside <paramref name="cloneRoot"/>.
         /// <see cref="UnityEngine.Events.UnityEventBase.RemoveAllListeners"/> only clears
         /// listeners added at runtime via <c>AddListener</c>; persistent listeners serialized on
-        /// the donor's prefab still fire after cloning and still target the donor's original
-        /// component instance, because Unity's cloning re-points references to other objects
-        /// inside the cloned hierarchy but leaves references to external objects untouched. Left
-        /// alone, a cloned button silently drives the original DSP window instead of the mod's.
+        /// the donor's prefab still fire after cloning. Unity's own cloning docs say <c>Instantiate</c>
+        /// re-points references to other objects <i>inside</i> the cloned hierarchy but leaves
+        /// references to external objects untouched, so a listener whose target is still under
+        /// <paramref name="cloneRoot"/> is the clone's own internal wiring (e.g. a control that
+        /// updates its own sibling's visuals) and must keep firing; only a listener that still
+        /// targets the donor's original external component is disabled. Left undiscriminated, a
+        /// cloned button would either keep silently driving the original DSP window (target left
+        /// on) or lose its own internal wiring (target turned off by mistake).
         /// </summary>
-        public static void DisablePersistentListeners(Button button) => DisablePersistentListeners(button.onClick);
+        public static void DisablePersistentListeners(Button button, Transform cloneRoot) => DisablePersistentListeners(button.onClick, cloneRoot);
 
-        /// <summary>
-        /// Same hazard as <see cref="DisablePersistentListeners(Button)"/>, for a cloned
-        /// <see cref="Toggle"/> (the fuel toggle donor, <c>UIPlayerDeliveryPanel.deliveryToggle</c>,
-        /// carries an inspector-assigned <c>onValueChanged</c> listener that targets the real
-        /// delivery panel's own toggle handler -- left enabled, clicking the cloned fuel toggle
-        /// would silently mutate the player's actual delivery settings).
-        /// </summary>
-        public static void DisablePersistentListeners(Toggle toggle) => DisablePersistentListeners(toggle.onValueChanged);
+        /// <summary>Same as <see cref="DisablePersistentListeners(Button, Transform)"/>, for a cloned <see cref="Toggle"/>.</summary>
+        public static void DisablePersistentListeners(Toggle toggle, Transform cloneRoot) => DisablePersistentListeners(toggle.onValueChanged, cloneRoot);
 
-        private static void DisablePersistentListeners(UnityEngine.Events.UnityEventBase unityEvent)
+        private static void DisablePersistentListeners(UnityEventBase unityEvent, Transform cloneRoot)
         {
             for (var i = 0; i < unityEvent.GetPersistentEventCount(); i++)
             {
-                unityEvent.SetPersistentListenerState(i, UnityEventCallState.Off);
+                if (!TargetsHierarchy(unityEvent.GetPersistentTarget(i), cloneRoot))
+                    unityEvent.SetPersistentListenerState(i, UnityEventCallState.Off);
             }
+        }
+
+        private static bool TargetsHierarchy(Object target, Transform root)
+        {
+            var targetTransform = target switch
+            {
+                Component component => component.transform,
+                GameObject gameObject => gameObject.transform,
+                _ => null
+            };
+            return targetTransform != null && root != null && targetTransform.IsChildOf(root);
         }
     }
 }
