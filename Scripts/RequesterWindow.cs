@@ -18,6 +18,13 @@ namespace Logistix.Scripts
 
         private GameObject _instanceGo;
 
+        // Set when BuildWindow's guarded sequence throws for a reason that will not resolve
+        // itself next frame (as opposed to the donor UI simply not being ready yet, which
+        // returns before this flag is ever touched). Without this, a deterministic failure
+        // would re-clone the entire replicator hierarchy and log a full stack trace every
+        // single frame. Reset in Unload() so a new game session gets one fresh attempt.
+        private bool _buildFailed;
+
         private UIItemRequestWindow uiItemRequestWindow;
         public static RequesterWindow Instance;
 
@@ -36,16 +43,12 @@ namespace Logistix.Scripts
                 return;
             if (_instanceGo == null)
             {
-                BuildWindow();
-                if (_instanceGo == null)
-                {
-                    // Donor UI not ready yet, or the build threw and unwound itself; retry next frame.
+                if (_buildFailed)
                     return;
-                }
-
-                uiItemRequestWindow._Create();
-                uiItemRequestWindow._Init(GameMain.mainPlayer);
-                uiItemRequestWindow._Close();
+                BuildWindow();
+                // Donor UI not ready yet, or the build threw and unwound itself; retry next frame.
+                if (_instanceGo == null)
+                    return;
             }
 
             if (_instanceGo.activeSelf)
@@ -63,8 +66,9 @@ namespace Logistix.Scripts
         /// replicator window) instead of loading <c>Assets/prefab/Request Window.prefab</c> from
         /// the unloadable Unity 2018 <c>pui</c> AssetBundle. See #1/#6/#17. Leaves
         /// <see cref="_instanceGo"/>/<see cref="uiItemRequestWindow"/> null and retries on the
-        /// next frame if the donor isn't ready yet or the build fails, instead of the unguarded
-        /// null-dereference chain the prefab-load code used to have.
+        /// next frame if the donor isn't ready yet, instead of the unguarded null-dereference
+        /// chain the prefab-load code used to have. A build failure sets
+        /// <see cref="_buildFailed"/> instead of retrying forever.
         /// </summary>
         private void BuildWindow()
         {
@@ -78,28 +82,39 @@ namespace Logistix.Scripts
             }
 
             var go = DspUiClone.CloneInactive(donor.gameObject, inventoryWindow.windowTrans.parent, WindowName);
+            UIItemRequestWindow itemRequestWindow = null;
 
-            // PopulateWindow progressively harvests fields onto a new UIItemRequestWindow as it
-            // builds. A throw partway through (destroying part of the donor's hierarchy, or the
-            // AddComponent/field-assignment step, none of which are verifiable without the game)
-            // must not leave a half-built window with a destroyed UIReplicatorWindow and no
-            // UIItemRequestWindow to replace it.
+            // PopulateWindow and the _Create/_Init/_Close lifecycle calls that follow it all
+            // progressively mutate or allocate against the clone (destroying donor sub-objects,
+            // AddComponent, the ComputeBuffers/materials _OnCreate allocates, the
+            // TabSystem/Resources/GameMain lookups _OnCreate and _OnInit make). A throw
+            // anywhere in that sequence must not leave a committed, active, half-initialized
+            // window that _OnUpdate() then NREs on every frame, so nothing is committed to
+            // _instanceGo/uiItemRequestWindow until the whole sequence has succeeded, and
+            // anything _OnCreate already allocated is released via _Destroy() before the clone
+            // itself is destroyed.
             try
             {
-                PopulateWindow(go, donor);
+                itemRequestWindow = PopulateWindow(go, donor);
+                itemRequestWindow._Create();
+                itemRequestWindow._Init(GameMain.mainPlayer);
+                itemRequestWindow._Close();
             }
             catch (Exception e)
             {
-                Log.Warn($"Requester window: window build failed, unwinding so the next open retries. {e.Message}\n{e.StackTrace}");
-                uiItemRequestWindow = null;
+                Log.Warn($"Requester window: window build failed, giving up for this session. {e.Message}\n{e.StackTrace}");
+                _buildFailed = true;
+                if (itemRequestWindow != null && itemRequestWindow.created)
+                    itemRequestWindow._Destroy();
                 Destroy(go);
                 return;
             }
 
+            uiItemRequestWindow = itemRequestWindow;
             _instanceGo = go;
         }
 
-        private void PopulateWindow(GameObject go, UIReplicatorWindow donor)
+        private UIItemRequestWindow PopulateWindow(GameObject go, UIReplicatorWindow donor)
         {
             var clonedReplicator = go.GetComponent<UIReplicatorWindow>();
 
@@ -118,15 +133,23 @@ namespace Logistix.Scripts
             var multiValueText = clonedReplicator.multiValueText;
             var confirmButton = clonedReplicator.okButton;
             var prefabNumText = clonedReplicator.prefabNumText;
+            if (windowRect == null || itemGroup == null || itemBg == null || recipeIcons == null || recipeSelImage == null
+                || typeButton1 == null || typeButton2 == null || minPlusButton == null || minMinusButton == null
+                || multiValueText == null || confirmButton == null || prefabNumText == null)
+                throw new InvalidOperationException("cloned UIReplicatorWindow is missing a harvested control");
 
             // The additive controls (#20: Recycle spinner, selected-item icon, Current/Update,
             // play/pause, Settings, fuel toggle) and the queue/tree/sandbox/batch controls the
             // request window never uses are not part of this window; destroy them so they don't
             // linger as dead objects (and dead persistent-listener targets) in the clone.
+            // Immediate: the clone is still inactive (CloneInactive), so there are no
+            // OnDisable/render side effects, and the searches later in this method (the title
+            // search, the Button sweep, WireCloseButton) must not still see these discarded
+            // subtrees -- a deferred Destroy() only takes effect at end of frame.
             DestroyChildIfNotNull(clonedReplicator.queueGroup);
             DestroyChildIfNotNull(clonedReplicator.treeGroup);
             if (clonedReplicator.currPredictGroup != null)
-                Destroy(clonedReplicator.currPredictGroup);
+                DestroyImmediate(clonedReplicator.currPredictGroup);
             DestroyChildIfNotNull(clonedReplicator.batchSwitch);
             DestroyChildIfNotNull(clonedReplicator.instantItemSwitch);
             DestroyChildIfNotNull(clonedReplicator.sandboxAddUsefulItemButton);
@@ -160,7 +183,13 @@ namespace Logistix.Scripts
             requestLabel.rectTransform.anchoredPosition = multiValueText.rectTransform.anchoredPosition + new Vector2(0, 20);
             var saveLabel = confirmButton.button.GetComponentInChildren<Text>();
             if (saveLabel != null)
+            {
+                // The donor's Localizer (if any) re-applies its own translation key on the next
+                // OnEnable/language change and would silently undo this relabel otherwise -- the
+                // same reason CloneText strips it from every text it clones.
+                DspUiClone.StripLocalizers(saveLabel.gameObject);
                 saveLabel.text = "PLOGsavechanges".Translate();
+            }
             else
                 Log.Warn("Requester window: Save button has no child Text to relabel");
 
@@ -179,13 +208,15 @@ namespace Logistix.Scripts
             WireCloseButton(go, uiItemRequest, allButtons, typeButton1, typeButton2, minPlusButton, minMinusButton, confirmButton);
 
             go.SetActive(true);
-            uiItemRequestWindow = uiItemRequest;
+            return uiItemRequest;
         }
 
         private static void DestroyChildIfNotNull(Component component)
         {
             if (component != null)
-                Destroy(component.gameObject);
+                // Immediate for the same reason as currPredictGroup above: a deferred Destroy()
+                // would still be visible to the searches later in PopulateWindow.
+                DestroyImmediate(component.gameObject);
         }
 
         /// <summary>
@@ -205,6 +236,9 @@ namespace Logistix.Scripts
                 Log.Warn("Requester window: could not find a title text under the cloned window; leaving the donor's title in place");
                 return;
             }
+            // Same reason as the Save label: strip the donor's Localizer before writing so it
+            // doesn't reassert the donor's own title key on the next OnEnable/language change.
+            DspUiClone.StripLocalizers(titleText.gameObject);
             titleText.text = "PLOGplrequests".Translate();
         }
 
@@ -232,6 +266,9 @@ namespace Logistix.Scripts
 
         public void Unload()
         {
+            // A fresh game session (or the plugin unloading and reloading) gets one new build
+            // attempt, even if the previous one failed and set _buildFailed.
+            _buildFailed = false;
             if (_instanceGo != null)
             {
                 if (uiItemRequestWindow != null && uiItemRequestWindow.gameObject != null)
@@ -275,7 +312,15 @@ namespace Logistix.Scripts
         [HarmonyPatch(typeof(UIGame), "_OnFree")]
         public static void UIGame__OnFree_Postfix(UIGame __instance)
         {
-            if (Instance != null && Instance.uiItemRequestWindow != null && Instance.uiItemRequestWindow.gameObject != null)
+            if (Instance == null)
+                return;
+
+            // A build failure never commits uiItemRequestWindow, so the branch below (and
+            // Unload's own reset) would never run for a session where the previous build
+            // failed; reset here unconditionally so the next session still gets a fresh attempt.
+            Instance._buildFailed = false;
+
+            if (Instance.uiItemRequestWindow != null && Instance.uiItemRequestWindow.gameObject != null)
             {
                 Log.Debug($"called req window _Free");
                 Instance.uiItemRequestWindow._Free();
