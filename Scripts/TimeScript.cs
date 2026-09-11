@@ -1,52 +1,66 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using Logistix.Logistics;
 using Logistix.Model;
+using Logistix.UI;
 using Logistix.Util;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 namespace Logistix.Scripts
 {
+    /// <summary>
+    /// Renders the incoming-items status list as pooled <see cref="IncomingItemRow"/>s instead
+    /// of a single TMPro block with inline &lt;sprite&gt; tags. DSP 0.10.34 ships no
+    /// TextMeshPro, and legacy Text has no sprite tag, so each row carries its own item-icon
+    /// Image alongside the translated message. See #1/#6/#15.
+    /// </summary>
     public class TimeScript : MonoBehaviour
     {
-        public TMP_Text inboundItemStatus;
-        private bool _textDirty = true;
-        private string _newText;
+        private const float RowSpacing = 2f;
+        private const float RootOffsetX = 20f;
+        private const float RootOffsetY = -160f;
+
+        private readonly List<IncomingItemRow> _rows = new();
+        private Text _rowTextTemplate;
+        private int _visibleRowCount;
 
         private bool _runOnce;
-        private bool _iconsLoaded;
-
-        // so we can change it using runtime editor
-        public static Localization.Language _testLanguageOverride = Localization.language;
         private static readonly Dictionary<string, DateTime> _lastFailureMessageTime = new();
         private static readonly Dictionary<string, DateTime> _itemNameFirstShownFailureMessageTime = new();
         private int _loadFailureReadmeReferenceMentionedCountDown = 5;
-        private const int _maxCharCount = 1000;
 
         private void Awake()
         {
-            if (!_iconsLoaded)
+            var rectTransform = (RectTransform)transform;
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(RootOffsetX, RootOffsetY);
+
+            var layoutGroup = gameObject.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = RowSpacing;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = true;
+            layoutGroup.childForceExpandWidth = false;
+            layoutGroup.childForceExpandHeight = false;
+
+            _rowTextTemplate = UIRoot.instance.uiGame.inventoryWindow.titleText;
+            if (_rowTextTemplate == null)
             {
-                SpriteSheetManager.Create(GameMain.iconSet, inboundItemStatus);
-                _iconsLoaded = true;
+                Log.Warn("TimeScript could not find a donor Text (uiGame.inventoryWindow.titleText); incoming item status will not render");
             }
         }
 
         private void Update()
         {
-            if (!_iconsLoaded)
+            if (_rowTextTemplate == null)
                 return;
-            if (_textDirty)
-            {
-                _textDirty = false;
-                inboundItemStatus.text = _newText;
-            }
 
             if (!LogisticsNetwork.IsInitted)
                 return;
+
             if (Time.frameCount % 60 == 0 || !_runOnce)
             {
                 _runOnce = true;
@@ -56,28 +70,17 @@ namespace Logistix.Scripts
                 }
                 else
                 {
-                    inboundItemStatus.gameObject.SetActive(false);
+                    gameObject.SetActive(false);
                 }
             }
 
             if (GameUtil.HideUiElements() || PluginConfig.IsPaused())
             {
-                inboundItemStatus.gameObject.SetActive(false);
+                gameObject.SetActive(false);
                 return;
             }
 
-            if (Time.frameCount % 105 == 0)
-            {
-                if (PluginConfig.testOverrideLanguage.Value != "" && _testLanguageOverride.ToString() != PluginConfig.testOverrideLanguage.Value)
-                {
-                    if (Enum.TryParse(PluginConfig.testOverrideLanguage.Value, true, out Localization.Language newLang))
-                    {
-                        _testLanguageOverride = newLang;
-                    }
-                }
-            }
-
-            inboundItemStatus.gameObject.SetActive(PluginConfig.showIncomingItemProgress.Value && !string.IsNullOrEmpty(inboundItemStatus.text));
+            gameObject.SetActive(PluginConfig.showIncomingItemProgress.Value && _visibleRowCount > 0);
         }
 
         private void UpdateIncomingItems()
@@ -90,43 +93,53 @@ namespace Logistix.Scripts
                     return;
                 }
 
-                var newText = new StringBuilder();
-                var lineCount = 0;
+                var rowCount = 0;
                 foreach (var loadState in itemLoadStates)
                 {
+                    string message;
                     try
                     {
-                        var etaStr = FormatLoadingStatusMessage(loadState);
-                        if (!string.IsNullOrWhiteSpace(etaStr))
-                        {
-                            newText.Append($"{etaStr}\r\n");
-                            lineCount++;
-                        }
+                        message = FormatLoadingStatusMessage(loadState);
                     }
                     catch (Exception e)
                     {
                         Log.Warn($"Messed up placeholders in translation. {e.Message}");
-                        newText.Append($"{loadState}\r\n");
+                        message = loadState.ToString();
                     }
 
-                    if (lineCount > GetMaxLineCount())
+                    if (string.IsNullOrWhiteSpace(message))
+                        continue;
+
+                    GetOrCreateRow(rowCount).Show(loadState.itemId, message);
+                    rowCount++;
+
+                    if (rowCount > GetMaxLineCount())
                         break;
                 }
 
+                for (var i = rowCount; i < _rows.Count; i++)
+                {
+                    _rows[i].Hide();
+                }
 
-                // if (newText.Length > _maxCharCount)
-                // {
-                //     _newText = newText.ToString().Substring(0, _maxCharCount - 3) + "...";
-                // }
-                // else
-                    _newText = newText.ToString();
-
-                _textDirty = true;
+                _visibleRowCount = rowCount;
             }
             catch (Exception e)
             {
                 Log.Warn($"failure while updating incoming items {e.Message} {e.StackTrace}");
             }
+        }
+
+        private IncomingItemRow GetOrCreateRow(int index)
+        {
+            if (index < _rows.Count)
+            {
+                return _rows[index];
+            }
+
+            var row = IncomingItemRow.Create(transform, _rowTextTemplate);
+            _rows.Add(row);
+            return row;
         }
 
         private int GetMaxLineCount()
@@ -148,7 +161,7 @@ namespace Logistix.Scripts
                 }
                 case RequestState.Created:
                 {
-                    return string.Format("PLOGTaskCreated".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", loadState.count);
+                    return string.Format("PLOGTaskCreated".Translate(), loadState.itemName, loadState.count);
                 }
                 case RequestState.Failed:
                 {
@@ -157,7 +170,7 @@ namespace Logistix.Scripts
                         return null;
                     }
 
-                    var result = string.Format("PLOGTaskFailed".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">");
+                    var result = string.Format("PLOGTaskFailed".Translate(), loadState.itemName);
 
                     if (!_itemNameFirstShownFailureMessageTime.TryGetValue(loadState.itemName, out var firstTime))
                         _itemNameFirstShownFailureMessageTime[result] = DateTime.Now;
@@ -173,7 +186,7 @@ namespace Logistix.Scripts
                 case RequestState.ReadyForInventoryUpdate:
                 {
                     _itemNameFirstShownFailureMessageTime.Remove(loadState.itemName);
-                    return string.Format("PLOGLoadingFromBuffer".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">",loadState.count);
+                    return string.Format("PLOGLoadingFromBuffer".Translate(), loadState.itemName, loadState.count);
                 }
                 case RequestState.WaitingForShipping:
                 {
@@ -182,14 +195,14 @@ namespace Logistix.Scripts
                     if (loadState.cost?.paid != null && loadState.cost.paid)
                     {
                         var etaStr = TimeUtil.FormatEta(Math.Max(loadState.secondsRemaining, 0.8f));
-                        return string.Format("PLOGTaskWaitingForShipping".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", shippingAmount, etaStr);
+                        return string.Format("PLOGTaskWaitingForShipping".Translate(), loadState.itemName, shippingAmount, etaStr);
                     }
 
                     if (loadState.cost == null)
                     {
                         Log.Warn($"missed setting cost for waiting for shipping");
                         var etaStr = TimeUtil.FormatEta(loadState.secondsRemaining);
-                        return string.Format("PLOGTaskWaitingForShipping".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", shippingAmount, etaStr);
+                        return string.Format("PLOGTaskWaitingForShipping".Translate(), loadState.itemName, shippingAmount, etaStr);
                     }
 
                     var stationInfo = LogisticsNetwork.FindStation(loadState.cost.stationGid, loadState.cost.planetId, loadState.cost.stationId);
@@ -203,15 +216,15 @@ namespace Logistix.Scripts
                     if (loadState.cost.processingPassesCompleted < 3)
                     {
                         // shipping isn't delayed (yet), it's just that the hasn't been checked
-                        return string.Format("PLOGShippingCostProcessing".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", shippingAmount);
+                        return string.Format("PLOGShippingCostProcessing".Translate(), loadState.itemName, shippingAmount);
                     }
 
                     if (loadState.cost.needWarper)
                     {
-                        return string.Format("PLOGShippingDelayedWarper".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", planetName, stationType);
+                        return string.Format("PLOGShippingDelayedWarper".Translate(), loadState.itemName, planetName, stationType);
                     }
 
-                    return string.Format("PLOGShippingDelayedEnergy".Translate(_testLanguageOverride), $"<sprite name=\"{loadState.itemName}\">", planetName, stationType);
+                    return string.Format("PLOGShippingDelayedEnergy".Translate(), loadState.itemName, planetName, stationType);
                 }
                 default:
                 {

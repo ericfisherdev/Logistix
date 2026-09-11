@@ -22,7 +22,6 @@ using Logistix.Shipping;
 using Logistix.UGUI;
 using Logistix.UI;
 using Logistix.Util;
-using TMPro;
 using UnityEngine;
 using xiaoye97;
 using static Logistix.Util.Log;
@@ -224,10 +223,10 @@ namespace Logistix
 
             if (_timeScript == null && GameMain.isRunning && LogisticsNetwork.IsInitted && GameMain.mainPlayer != null)
             {
-                var prefab = Asset.bundle.LoadAsset<GameObject>("Assets/prefab/Incoming items v2.prefab");
                 var inGameGo = GameObject.Find("UI Root/Overlay Canvas/In Game");
-                var prefabTs = Instantiate(prefab, inGameGo.transform, false);
-                _timeScript = prefabTs.GetComponent<TimeScript>();
+                var statusListGo = new GameObject("Logistix Incoming Items", typeof(RectTransform));
+                statusListGo.transform.SetParent(inGameGo.transform, false);
+                _timeScript = statusListGo.AddComponent<TimeScript>();
 
                 // make sure the arrival time stuff appears behind inventory window and the UIItemUp stuff
                 _timeScript.transform.SetAsFirstSibling();
@@ -378,27 +377,6 @@ namespace Logistix
             {
                 Warn("KeyBind with ID=211, ShowPlogWindow already bound");
             }
-        }
-
-        [HarmonyPatch(typeof(Resources), "Load", typeof(string), typeof(Type))]
-        [HarmonyPrefix]
-        public static bool Prefix(ref string path, Type systemTypeInstance, ref Object __result)
-        {
-            if (path.Contains("TMP Settings"))
-            {
-                Debug($"intercepting call for {path}");
-                var asset = Asset.bundle.LoadAsset<TMP_Settings>("Assets/TextMesh Pro/Resources/TMP Settings.asset");
-                if (asset != null)
-                {
-                    __result = asset;
-                    Debug("successfully loaded asset");
-                    return false;
-                }
-
-                Warn($"failed to load asset, still null");
-            }
-
-            return true;
         }
 
         public bool CheckVersion(string hostVersion, string clientVersion)

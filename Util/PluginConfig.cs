@@ -73,7 +73,6 @@ namespace Logistix.Util
         public static ConfigEntry<bool> addWarpersToMecha;
 
         public static ConfigEntry<int> testExportOverrideVersion;
-        public static ConfigEntry<string> testOverrideLanguage;
         public static ConfigEntry<string> multiplayerUserId;
 
         public static ConfigFile configFile { get; private set; }
@@ -172,15 +171,6 @@ namespace Logistix.Util
                 "Don't edit this, it's used to uniquely identify your player in a multiplayer game. If it's changed then your incoming items/desired items/buffer can be lost");
             // force this setting to be -1 so that it has to be set at runtime and can't be left on by accident
             testExportOverrideVersion.Value = -1;
-            var languages = Enum.GetNames(typeof(Localization.Language)).ToList().FindAll(l => l.ToString().Length == 4);
-            languages.Add("");
-            testOverrideLanguage = confFile.Bind("Internal", "TEST override language", "",
-                new ConfigDescription("Force an alt language to be used (for some text)",
-                    new AcceptableValueList<string>(
-                        languages.ToArray()
-                    )));
-            // force this setting to empty so that it has to be set at runtime and can't be left on by accident
-            testOverrideLanguage.Value = "";
             timeScriptPositionTestEnabled.Value = false;
 
 #if DEBUG
