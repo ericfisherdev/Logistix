@@ -1,6 +1,5 @@
 ﻿using NebulaAPI;
 using NebulaAPI.DataStructures;
-using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
@@ -25,9 +24,6 @@ namespace Logistix.Nebula.Host
             var plogPlayer = PlayerStateContainer.GetPlayer(remotePlayerId, true);
             if (plogPlayer is PlogRemotePlayer remotePlayer)
             {
-                INetworkProvider network = NebulaModAPI.MultiplayerSession.Network;
-                var nebulaPlayer = network.PlayerManager.GetPlayer(conn);
-                remotePlayer.NebulaPlayer = nebulaPlayer;
                 var remoteUserBytes = SerDeManager.ExportRemoteUserData(remotePlayer);
                 Log.Debug($"Sending client state back to client {remoteUserBytes.Length} bytes");
                 NebulaModAPI.MultiplayerSession.Network.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
@@ -35,9 +31,7 @@ namespace Logistix.Nebula.Host
             else
             {
                 Log.Warn("Invalid state got a local player back while running as host. Assuming player has dupe id");
-                INetworkProvider network = NebulaModAPI.MultiplayerSession.Network;
-                var nebulaPlayer = network.PlayerManager.GetPlayer(conn);
-                nebulaPlayer.SendPacket(new RegenerateUserIdRequest(remotePlayerId));
+                conn.SendPacket(new RegenerateUserIdRequest(remotePlayerId));
             }
         }
     }
