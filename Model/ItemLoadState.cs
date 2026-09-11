@@ -11,6 +11,7 @@ namespace Logistix.Model
     {
         public RequestState requestState;
         public int count;
+        public int itemId;
         public string itemName;
         public int secondsRemaining;
         public Cost cost;
@@ -65,6 +66,7 @@ namespace Logistix.Model
 
                 itemLoadStates.Add(new ItemLoadState
                 {
+                    itemId = itemRequest.ItemId,
                     itemName = ItemUtil.GetItemName(itemRequest.ItemId),
                     secondsRemaining = (int)secondsRemaining,
                     count = itemRequest.ItemCount,
@@ -90,6 +92,7 @@ namespace Logistix.Model
                 {
                     result.Add(new ItemLoadState
                     {
+                        itemId = allItems[i].ID,
                         itemName = ItemUtil.GetItemName(allItems[i].ID),
                         secondsRemaining = (i + 10) * 11,
                         count = 7 * (i + 1),
@@ -100,6 +103,7 @@ namespace Logistix.Model
                     {
                         result.Add(new ItemLoadState
                         {
+                            itemId = allItems[i + 1].ID,
                             itemName = ItemUtil.GetItemName(allItems[i + 1].ID),
                             secondsRemaining = (i + 10) * 12,
                             count = 7 * (i + 1) * 4,
@@ -108,6 +112,7 @@ namespace Logistix.Model
                         });
                         result.Add(new ItemLoadState
                         {
+                            itemId = allItems[i + 2].ID,
                             itemName = ItemUtil.GetItemName(allItems[i + 2].ID),
                             secondsRemaining = (i + 10) * 13,
                             count = 7 * (i + 1) * 6,
@@ -116,6 +121,7 @@ namespace Logistix.Model
                         });
                         result.Add(new ItemLoadState
                         {
+                            itemId = allItems[i + 3].ID,
                             itemName = ItemUtil.GetItemName(allItems[i + 3].ID),
                             secondsRemaining = (i + 10) * 14,
                             count = 7 * (i + 1) * 9,
@@ -134,6 +140,7 @@ namespace Logistix.Model
                     x2.Add(new ItemLoadState
                     {
                         cost = itemLoadState.cost,
+                        itemId = itemLoadState.itemId,
                         itemName = itemLoadState.itemName,
                         requestState = itemLoadState.requestState,
                         count = itemLoadState.count * (i+2),
