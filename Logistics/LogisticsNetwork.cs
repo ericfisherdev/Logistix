@@ -523,7 +523,7 @@ namespace Logistix.Logistics
                     return ("Not available in logistics network", true);
                 }
 
-                return ("Personal logistics still loading...", true);
+                return ("Logistix still loading...", true);
             }
 
             var stringBuilder = new StringBuilder();
@@ -589,7 +589,7 @@ namespace Logistix.Logistics
                     return "Not available in logistics network";
                 }
 
-                return "Personal logistics still loading...";
+                return "Logistix still loading...";
             }
 
             try
@@ -649,7 +649,7 @@ namespace Logistix.Logistics
             catch (Exception e)
             {
                 Warn($"still getting exception {e.Message} {e.StackTrace}");
-                return "Personal logistics syncing";
+                return "Logistix syncing";
             }
         }
 

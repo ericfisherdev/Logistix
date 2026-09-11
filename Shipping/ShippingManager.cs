@@ -209,7 +209,7 @@ namespace Logistix.Shipping
                             if (GetPlayer().inventoryManager.RemoveItemImmediately(Mecha.WARPER_ITEMID, cntToRemove, out _))
                             {
                                 cost.needWarper = false;
-                                LogPopupWithFrequency("Personal logistics removed warper from player inventory");
+                                LogPopupWithFrequency("Logistix removed warper from player inventory");
                             }
                         }
 
@@ -243,7 +243,7 @@ namespace Logistix.Shipping
                                 var energyToUse = cost.energyCost * ratio;
                                 GetPlayer().UseEnergy(energyToUse, Mecha.EC_DRONE);
                                 var ratioInt = (int)(ratio * 100);
-                                LogPopupWithFrequency($"Personal logistics using {{0}} ({{1}}% of needed) from mecha energy while retrieving item {itemRequest.ItemName}",
+                                LogPopupWithFrequency($"Logistix using {{0}} ({{1}}% of needed) from mecha energy while retrieving item {itemRequest.ItemName}",
                                     energyToUse, ratioInt);
                                 cost.energyCost -= (long)energyToUse;
                             }
