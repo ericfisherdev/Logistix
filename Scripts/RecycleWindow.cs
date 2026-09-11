@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using CommonAPI.Systems;
 using HarmonyLib;
 using Logistix.Logistics;
@@ -238,19 +239,16 @@ namespace Logistix.Scripts
 
             uiStorageGrid.storage = _storageComponent;
             // copy the persisted grid items into array
-            foreach (var persistedGridItem in _gridItems)
+            foreach (var persistedGridItem in _gridItems.Where(item => item != null))
             {
-                if (persistedGridItem != null)
+                _storageComponent.grids[persistedGridItem.Index] = new StorageComponent.GRID
                 {
-                    _storageComponent.grids[persistedGridItem.Index] = new StorageComponent.GRID
-                    {
-                        itemId = persistedGridItem.ItemId,
-                        count = persistedGridItem.Count,
-                        inc = persistedGridItem.ProliferatorPoints,
-                        stackSize = ItemUtil.GetItemProto(persistedGridItem.ItemId).StackSize,
-                    };
-                    Log.Debug($"Imported item to recycle window {persistedGridItem}");
-                }
+                    itemId = persistedGridItem.ItemId,
+                    count = persistedGridItem.Count,
+                    inc = persistedGridItem.ProliferatorPoints,
+                    stackSize = ItemUtil.GetItemProto(persistedGridItem.ItemId).StackSize,
+                };
+                Log.Debug($"Imported item to recycle window {persistedGridItem}");
             }
 
             _gridItems.Clear();
@@ -284,12 +282,9 @@ namespace Logistix.Scripts
         /// </summary>
         private static void StripClonedNumberTexts(GameObject gridGo, Text prefabNumText)
         {
-            foreach (var text in gridGo.GetComponentsInChildren<Text>(true))
+            foreach (var text in gridGo.GetComponentsInChildren<Text>(true).Where(text => text != prefabNumText))
             {
-                if (text != prefabNumText)
-                {
-                    Destroy(text.gameObject);
-                }
+                Destroy(text.gameObject);
             }
         }
 
