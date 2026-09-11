@@ -23,6 +23,13 @@ namespace Logistix.Scripts
         private const float RootOffsetY = -160f;
 
         private readonly List<IncomingItemRow> _rows = new();
+
+        // Rows live under this child object, not directly under the component's own
+        // GameObject: Unity stops calling Update() on a MonoBehaviour once its host
+        // GameObject is deactivated, and nothing outside this class ever reactivates
+        // it (LogistixPlugin.OnGUI only creates a new TimeScript when _timeScript is
+        // null). Hiding the list must never touch the GameObject this component lives on.
+        private GameObject _content;
         private Text _rowTextTemplate;
         private int _visibleRowCount;
 
@@ -39,23 +46,45 @@ namespace Logistix.Scripts
             rectTransform.pivot = new Vector2(0f, 1f);
             rectTransform.anchoredPosition = new Vector2(RootOffsetX, RootOffsetY);
 
-            var layoutGroup = gameObject.AddComponent<VerticalLayoutGroup>();
+            var inventoryWindow = UIRoot.instance != null && UIRoot.instance.uiGame != null
+                ? UIRoot.instance.uiGame.inventoryWindow
+                : null;
+            _rowTextTemplate = inventoryWindow != null ? inventoryWindow.titleText : null;
+            if (_rowTextTemplate == null)
+            {
+                Log.Warn("TimeScript could not find a donor Text (uiGame.inventoryWindow.titleText); incoming item status will not render");
+                // Let LogistixPlugin.OnGUI's _timeScript == null gate retry on a later frame
+                // instead of leaving a permanently dead list for the rest of the session.
+                Destroy(gameObject);
+                return;
+            }
+
+            _content = new GameObject("Content", typeof(RectTransform));
+            _content.transform.SetParent(transform, false);
+            var contentRect = (RectTransform)_content.transform;
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(0f, 1f);
+            contentRect.pivot = new Vector2(0f, 1f);
+            contentRect.anchoredPosition = Vector2.zero;
+
+            var layoutGroup = _content.AddComponent<VerticalLayoutGroup>();
             layoutGroup.spacing = RowSpacing;
             layoutGroup.childControlWidth = true;
             layoutGroup.childControlHeight = true;
             layoutGroup.childForceExpandWidth = false;
             layoutGroup.childForceExpandHeight = false;
 
-            _rowTextTemplate = UIRoot.instance.uiGame.inventoryWindow.titleText;
-            if (_rowTextTemplate == null)
-            {
-                Log.Warn("TimeScript could not find a donor Text (uiGame.inventoryWindow.titleText); incoming item status will not render");
-            }
+            // VerticalLayoutGroup never resizes its own RectTransform; without this, the
+            // container stays at the default 100x100 rect and rows get compressed toward
+            // zero height as soon as their combined preferred height exceeds that.
+            var sizeFitter = _content.AddComponent<ContentSizeFitter>();
+            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
         private void Update()
         {
-            if (_rowTextTemplate == null)
+            if (_content == null)
                 return;
 
             if (!LogisticsNetwork.IsInitted)
@@ -70,17 +99,17 @@ namespace Logistix.Scripts
                 }
                 else
                 {
-                    gameObject.SetActive(false);
+                    _content.SetActive(false);
                 }
             }
 
             if (GameUtil.HideUiElements() || PluginConfig.IsPaused())
             {
-                gameObject.SetActive(false);
+                _content.SetActive(false);
                 return;
             }
 
-            gameObject.SetActive(PluginConfig.showIncomingItemProgress.Value && _visibleRowCount > 0);
+            _content.SetActive(PluginConfig.showIncomingItemProgress.Value && _visibleRowCount > 0);
         }
 
         private void UpdateIncomingItems()
@@ -137,7 +166,7 @@ namespace Logistix.Scripts
                 return _rows[index];
             }
 
-            var row = IncomingItemRow.Create(transform, _rowTextTemplate);
+            var row = IncomingItemRow.Create(_content.transform, _rowTextTemplate);
             _rows.Add(row);
             return row;
         }
