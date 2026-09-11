@@ -34,5 +34,18 @@ namespace Logistix.UI
                 Object.Destroy(localizer);
             }
         }
+
+        /// <summary>
+        /// Clones a donor <see cref="GameObject"/> and immediately deactivates the clone, so
+        /// callers can finish configuring it (grid dimensions, storage backing, materials)
+        /// before anything renders or runs <c>Update()</c> against half-built state.
+        /// </summary>
+        public static GameObject CloneInactive(GameObject source, Transform parent, string name)
+        {
+            var clone = Object.Instantiate(source, parent, false);
+            clone.SetActive(false);
+            clone.name = name;
+            return clone;
+        }
     }
 }

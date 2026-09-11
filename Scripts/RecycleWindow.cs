@@ -7,14 +7,25 @@ using Logistix.Logistics;
 using Logistix.Model;
 using Logistix.ModPlayer;
 using Logistix.SerDe;
+using Logistix.UI;
 using Logistix.Util;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Logistix.Scripts
 {
+    /// <summary>
+    /// Recycle panel: a 1x10 <see cref="UIStorageGrid"/> hung under the inventory window,
+    /// built by cloning <c>UIGame.inventoryWindow.inventory</c> instead of loading
+    /// <c>Assets/Prefab/Player Inventory Recycle.prefab</c> from the unloadable Unity 2018
+    /// <c>pui</c> AssetBundle. See #1/#6/#16.
+    /// </summary>
     public class RecycleWindow : ManualBehaviour
     {
+        private const float PanelGapBelowWindow = 4f;
+        private const float TitleHeight = 20f;
+        private const float HintHeight = 16f;
+
         private static RecycleWindow _instance;
         private static readonly int buffer = Shader.PropertyToID("_StateBuffer");
         private static readonly int indexBuffer = Shader.PropertyToID("_IndexBuffer");
@@ -66,9 +77,10 @@ namespace Logistix.Scripts
             if (PluginConfig.IsPaused() && _instanceGo != null && _instance.gameObject.activeSelf)
             {
                 _instanceGo.SetActive(false);
-                checkBoxImage.sprite = sprOff;
+                if (checkBoxImage != null)
+                    checkBoxImage.sprite = sprOff;
             }
-            
+
             // remove recycle window as target for shift clicking logistics vessels/bots when another station window is open
             if (UIRoot.instance.uiGame.stationWindow != null && UIRoot.instance.uiGame.stationWindow.gameObject.activeSelf && uiStorageGrid != null)
             {
@@ -89,63 +101,12 @@ namespace Logistix.Scripts
                 _openRequested = false;
                 if (_instanceGo == null)
                 {
-                    AddShowRecycleCheck();
-
-                    Log.Debug("Instantiating Recycle window");
-                    var prefab = Asset.bundle.LoadAsset<GameObject>("Assets/Prefab/Player Inventory Recycle.prefab");
-                    var uiGameInventory = UIRoot.instance.uiGame.inventory;
-                    _storageComponent = new StorageComponent(10);
-                    _instanceGo = Instantiate(prefab, uiGameInventory.transform, false);
-
-                    uiStorageGrid = _instanceGo.GetComponentInChildren<UIStorageGrid>();
-                    uiStorageGrid._OnCreate();
-                    uiStorageGrid.data = _storageComponent;
-
-                    uiStorageGrid.storage = _storageComponent;
-                    uiStorageGrid.rowCount = 1;
-                    uiStorageGrid.colCount = 10;
-                    uiStorageGrid._OnInit();
-
-                    UpdateMaterials();
-
-                    uiStorageGrid.storage = _storageComponent;
-                    // copy the persisted grid items into array
-                    foreach (var persistedGridItem in _gridItems)
-                    {
-                        if (persistedGridItem != null)
-                        {
-                            _storageComponent.grids[persistedGridItem.Index] = new StorageComponent.GRID
-                            {
-                                itemId = persistedGridItem.ItemId,
-                                count = persistedGridItem.Count,
-                                inc = persistedGridItem.ProliferatorPoints,
-                                stackSize = ItemUtil.GetItemProto(persistedGridItem.ItemId).StackSize,
-                            };
-                            Log.Debug($"Imported item to recycle window {persistedGridItem}");
-                        }
-                    }
-
-                    _gridItems.Clear();
-                    RecordStorageChange();
-
-                    uiStorageGrid.OnStorageDataChanged();
-                    uiStorageGrid.storage.onStorageChange += RecordStorageChange;
-                    var tipTexGo = GameObject.Find("UI Root/Overlay Canvas/In Game/Windows/Player Inventory/panel-bg/tip-text");
-                    float yOffset = GetYOffset();
-                    var position = tipTexGo.transform.position;
-                    uiStorageGrid.rectTrans.position =
-                        new Vector3(uiStorageGrid.rectTrans.transform.position.x, position.y - yOffset, position.z);
-
-                    var panel = GameObject.Find("UI Root/Overlay Canvas/In Game/Windows/Player Inventory/Player Inventory Recycle(Clone)/panel-bg");
-                    if (panel != null)
-                    {
-                        panel.transform.localScale = new Vector3(panel.transform.localScale.x * 0.95f, panel.transform.localScale.y, panel.transform.localScale.z);
-                    }
+                    BuildRecyclePanel();
                 }
 
                 // Add the recycle storage grid to the list of opened storages so items can be shift-clicked into it. Only do this if another storage is not open since
                 // the preference should be to move items into an open storage bin over recycling
-                if (UIStorageGrid.openedStorages.Count == 1 && (UIRoot.instance.uiGame.stationWindow == null || !UIRoot.instance.uiGame.stationWindow.gameObject.activeSelf))
+                if (uiStorageGrid != null && UIStorageGrid.openedStorages.Count == 1 && (UIRoot.instance.uiGame.stationWindow == null || !UIRoot.instance.uiGame.stationWindow.gameObject.activeSelf))
                     UIStorageGrid.openedStorages.Add(uiStorageGrid);
             }
             else if (_closeRequested)
@@ -193,31 +154,168 @@ namespace Logistix.Scripts
             }
         }
 
-        private float GetYOffset()
+        /// <summary>
+        /// Builds the recycle panel programmatically by cloning
+        /// <c>UIGame.inventoryWindow.inventory</c> into a panel hung under the inventory
+        /// window, replacing the old load of the (unloadable on 0.10.34) Unity 2018
+        /// AssetBundle prefab. Leaves <see cref="_instanceGo"/>/<see cref="uiStorageGrid"/>
+        /// null and retries on the next open if the inventory window isn't ready yet, instead
+        /// of the unguarded null-dereference chain the prefab-load code used to have.
+        /// </summary>
+        private void BuildRecyclePanel()
         {
-            // 1.14f seems to work for 1080
-            if (DSPGame.globalOption.uiLayoutHeight == 1080)
-                return 1.14f;
-            var multiplier = DSPGame.globalOption.uiLayoutHeight / 1080f;
-            return 1.14f / multiplier;
+            var inventoryWindow = UIRoot.instance != null && UIRoot.instance.uiGame != null
+                ? UIRoot.instance.uiGame.inventoryWindow
+                : null;
+            if (inventoryWindow == null || inventoryWindow.windowTrans == null ||
+                inventoryWindow.inventory == null || inventoryWindow.titleText == null)
+            {
+                Log.Warn("Recycle window: inventory window not ready yet, deferring panel build");
+                return;
+            }
+
+            Log.Debug("Building Recycle window panel");
+            var windowTrans = inventoryWindow.windowTrans;
+
+            var panelGo = new GameObject("Logistix Recycle Panel", typeof(RectTransform), typeof(Image));
+            var panelRect = (RectTransform)panelGo.transform;
+            panelRect.SetParent(windowTrans, false);
+            panelRect.anchorMin = new Vector2(0f, 0f);
+            panelRect.anchorMax = new Vector2(1f, 0f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -PanelGapBelowWindow);
+
+            var donorPanelImage = windowTrans.GetComponentInChildren<Image>();
+            var panelImage = panelGo.GetComponent<Image>();
+            if (donorPanelImage != null)
+            {
+                panelImage.sprite = donorPanelImage.sprite;
+                panelImage.type = donorPanelImage.type;
+                panelImage.color = donorPanelImage.color;
+                Log.Debug($"Recycle panel background copied from {donorPanelImage.name}");
+            }
+            else
+            {
+                Log.Warn($"Recycle window: no donor Image found under {windowTrans.name}, panel background left blank");
+            }
+
+            // Clone the (not-yet-shrunk) inventory title so the panel's own title keeps its
+            // original size; AddShowRecycleCheck() below shrinks the donor afterwards.
+            var titleText = DspUiClone.CloneText(inventoryWindow.titleText, panelRect, "recycle-title", "PLOGrecycle".Translate());
+            var titleRect = (RectTransform)titleText.transform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = Vector2.zero;
+            titleRect.sizeDelta = new Vector2(0f, TitleHeight);
+
+            var hintText = DspUiClone.CloneText(inventoryWindow.titleText, panelRect, "recycle-hint", "Drop items here to recycle".Translate());
+            hintText.fontSize = 11;
+            var hintRect = (RectTransform)hintText.transform;
+            hintRect.anchorMin = new Vector2(0f, 1f);
+            hintRect.anchorMax = new Vector2(1f, 1f);
+            hintRect.pivot = new Vector2(0.5f, 1f);
+            hintRect.anchoredPosition = new Vector2(0f, -TitleHeight);
+            hintRect.sizeDelta = new Vector2(0f, HintHeight);
+
+            var gridGo = DspUiClone.CloneInactive(inventoryWindow.inventory.gameObject, panelRect, "recycle-grid");
+            uiStorageGrid = gridGo.GetComponent<UIStorageGrid>();
+            uiStorageGrid.primary = false;
+            uiStorageGrid.numTexts = null;
+            uiStorageGrid.tip = null;
+            StripClonedNumberTexts(gridGo, uiStorageGrid.prefabNumText);
+
+            _storageComponent = new StorageComponent(10);
+            uiStorageGrid._OnCreate();
+            uiStorageGrid.data = _storageComponent;
+
+            uiStorageGrid.storage = _storageComponent;
+            uiStorageGrid.rowCount = 1;
+            uiStorageGrid.colCount = 10;
+            uiStorageGrid._OnInit();
+
+            UpdateMaterials();
+
+            uiStorageGrid.storage = _storageComponent;
+            // copy the persisted grid items into array
+            foreach (var persistedGridItem in _gridItems)
+            {
+                if (persistedGridItem != null)
+                {
+                    _storageComponent.grids[persistedGridItem.Index] = new StorageComponent.GRID
+                    {
+                        itemId = persistedGridItem.ItemId,
+                        count = persistedGridItem.Count,
+                        inc = persistedGridItem.ProliferatorPoints,
+                        stackSize = ItemUtil.GetItemProto(persistedGridItem.ItemId).StackSize,
+                    };
+                    Log.Debug($"Imported item to recycle window {persistedGridItem}");
+                }
+            }
+
+            _gridItems.Clear();
+            RecordStorageChange();
+
+            uiStorageGrid.OnStorageDataChanged();
+            uiStorageGrid.storage.onStorageChange += RecordStorageChange;
+
+            var gridRect = uiStorageGrid.rectTrans;
+            gridRect.anchorMin = new Vector2(0.5f, 1f);
+            gridRect.anchorMax = new Vector2(0.5f, 1f);
+            gridRect.pivot = new Vector2(0.5f, 1f);
+            gridRect.anchoredPosition = new Vector2(0f, -(TitleHeight + HintHeight));
+
+            var gridHeight = UIStorageGrid.kGridSize + 2 * UIStorageGrid.kPadding;
+            panelRect.sizeDelta = new Vector2(0f, TitleHeight + HintHeight + gridHeight);
+
+            AddShowRecycleCheck(inventoryWindow);
+
+            panelGo.SetActive(true);
+            gridGo.SetActive(true);
+            _instanceGo = panelGo;
         }
 
-        private void AddShowRecycleCheck()
+        /// <summary>
+        /// The cloned grid carries the live inventory grid's pooled per-cell count labels
+        /// (<c>numTexts</c>); nulling that field reference alone leaves the actual label
+        /// objects in the scene showing stale counts, so they're destroyed outright. The
+        /// pooled label prefab (<c>prefabNumText</c>) itself is kept, since the grid clones it
+        /// back out as cells fill.
+        /// </summary>
+        private static void StripClonedNumberTexts(GameObject gridGo, Text prefabNumText)
         {
-            sprOn = Sprite.Create(texOn, new Rect(0, 0, texOn.width, texOn.height), new Vector2(0.5f, 0.5f));
-            sprOff = Sprite.Create(texOff, new Rect(0, 0, texOff.width, texOff.height), new Vector2(0.5f, 0.5f));
+            foreach (var text in gridGo.GetComponentsInChildren<Text>(true))
+            {
+                if (text != prefabNumText)
+                {
+                    Destroy(text.gameObject);
+                }
+            }
+        }
+
+        private void AddShowRecycleCheck(UIInventoryWindow inventoryWindow)
+        {
+            if (texOn != null && texOff != null)
+            {
+                sprOn = Sprite.Create(texOn, new Rect(0, 0, texOn.width, texOn.height), new Vector2(0.5f, 0.5f));
+                sprOff = Sprite.Create(texOff, new Rect(0, 0, texOff.width, texOff.height), new Vector2(0.5f, 0.5f));
+            }
+            else
+            {
+                Log.Warn("Recycle window: checkbox textures not found under Resources, falling back to a plain coloured indicator");
+            }
+
             // first shrink down inventory label and move up slightly
-            var titleTextGo = GameObject.Find("UI Root/Overlay Canvas/In Game/Windows/Player Inventory/panel-bg/title-text");
-            var titleText = titleTextGo.transform.GetComponent<Text>();
+            var titleText = inventoryWindow.titleText;
             titleText.fontSize = 14;
-            var titleTextRT = titleTextGo.transform.GetComponent<RectTransform>();
+            var titleTextRT = (RectTransform)titleText.transform;
             titleTextRT.anchoredPosition = new Vector2(titleTextRT.anchoredPosition.x, -8);
 
             // add checkbox
             chxGO = new GameObject("displayRecycleWindowCheck");
 
             RectTransform checkBoxRectTransform = chxGO.AddComponent<RectTransform>();
-            checkBoxRectTransform.SetParent(UIRoot.instance.uiGame.inventory.transform, false);
+            checkBoxRectTransform.SetParent(inventoryWindow.windowTrans, false);
 
             checkBoxRectTransform.anchorMax = new Vector2(0, 1);
             checkBoxRectTransform.anchorMin = new Vector2(0, 1);
