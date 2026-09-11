@@ -107,13 +107,22 @@ namespace Logistix.UI
 
         private static bool TargetsHierarchy(Object target, Transform root)
         {
+            // Unity's overloaded null: a destroyed target (e.g. PopulateWindow's
+            // DestroyImmediate(clonedReplicator), whose persistent listeners this same sweep may
+            // still be walking) compares equal to null here even though the C# reference itself
+            // isn't null, so this must run before the pattern match below -- `is Component`
+            // still matches a destroyed object's stale wrapper, and dereferencing .transform on
+            // it throws MissingReferenceException.
+            if (target == null || root == null)
+                return false;
+
             var targetTransform = target switch
             {
                 Component component => component.transform,
                 GameObject gameObject => gameObject.transform,
                 _ => null
             };
-            return targetTransform != null && root != null && targetTransform.IsChildOf(root);
+            return targetTransform != null && targetTransform.IsChildOf(root);
         }
     }
 }
