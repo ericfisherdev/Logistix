@@ -12,23 +12,23 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.PlayerInventory;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Shipping;
-using PersonalLogistics.UGUI;
-using PersonalLogistics.UI;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.ModPlayer;
+using Logistix.Nebula;
+using Logistix.PlayerInventory;
+using Logistix.Scripts;
+using Logistix.SerDe;
+using Logistix.Shipping;
+using Logistix.UGUI;
+using Logistix.UI;
+using Logistix.Util;
 using TMPro;
 using UnityEngine;
 using xiaoye97;
-using static PersonalLogistics.Util.Log;
+using static Logistix.Util.Log;
 using Object = UnityEngine.Object;
 
-namespace PersonalLogistics
+namespace Logistix
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
     [BepInProcess("DSPGAME.exe")]
@@ -38,15 +38,15 @@ namespace PersonalLogistics
     [BepInDependency(LDBToolPlugin.MODGUID)]
     [BepInDependency(DSPModSavePlugin.MODGUID)]
     [CommonAPISubmoduleDependency(nameof(ProtoRegistry), nameof(CustomKeyBindSystem), nameof(TabSystem))]
-    public class PersonalLogisticsPlugin : BaseUnityPlugin, IModCanSave, IMultiplayerMod
+    public class LogistixPlugin : BaseUnityPlugin, IModCanSave, IMultiplayerMod
     {
-        private const string PluginGuid = "semarware.dysonsphereprogram.PersonalLogistics";
-        private const string PluginName = "PersonalLogistics";
-        private const string PluginVersion = "2.9.8";
+        private const string PluginGuid = "ericfisherdev.dysonsphereprogram.Logistix";
+        private const string PluginName = "Logistix";
+        private const string PluginVersion = "1.0.0";
         private const float InventorySyncInterval = 4.5f;
         private static readonly int VERSION = 2;
 
-        private static PersonalLogisticsPlugin instance;
+        private static LogistixPlugin instance;
         private readonly List<GameObject> _objectsToDestroy = new();
         private Harmony _harmony;
         private bool _initted;
@@ -63,7 +63,7 @@ namespace PersonalLogistics
             logger = Logger;
             instance = this;
             _harmony = new Harmony(PluginGuid);
-            _harmony.PatchAll(typeof(PersonalLogisticsPlugin));
+            _harmony.PatchAll(typeof(LogistixPlugin));
             _harmony.PatchAll(typeof(RequestWindow));
             _harmony.PatchAll(typeof(RecycleWindow));
             _harmony.PatchAll(typeof(RequesterWindow));
@@ -79,7 +79,7 @@ namespace PersonalLogistics
 #else
             Log.Debug("Release build");
 #endif
-            Log.Info($"PersonalLogistics Plugin Loaded {PluginVersion}");
+            Log.Info($"Logistix Plugin Loaded {PluginVersion}");
         }
 
 

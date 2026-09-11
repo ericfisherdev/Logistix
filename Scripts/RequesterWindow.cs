@@ -1,10 +1,10 @@
 ﻿using CommonAPI.Systems;
 using HarmonyLib;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public class RequesterWindow : MonoBehaviour
     {

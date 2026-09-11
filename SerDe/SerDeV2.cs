@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.Util;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Scripts;
+using Logistix.Util;
 
-namespace PersonalLogistics.SerDe
+namespace Logistix.SerDe
 {
     public class SerDeV2 : ISerDe
     {

@@ -1,4 +1,4 @@
-﻿namespace PersonalLogistics.Nebula.Packets
+﻿namespace Logistix.Nebula.Packets
 {
     public class RemoveFromNetworkResponse
     {

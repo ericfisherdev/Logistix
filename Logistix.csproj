@@ -2,14 +2,15 @@
 
 <PropertyGroup>
         <TargetFramework>net48</TargetFramework>
-        <AssemblyName>PersonalLogistics</AssemblyName>
-        <Description>https://github.com/mattsemar/dsp-personal-logistics</Description>
-        <RepositoryUrl>https://github.com/mattsemar/dsp-personal-logistics</RepositoryUrl>
-        <Version>2.8.1</Version>
+        <AssemblyName>Logistix</AssemblyName>
+        <RootNamespace>Logistix</RootNamespace>
+        <Description>Logistix - a revival of PersonalLogistics for Dyson Sphere Program</Description>
+        <RepositoryUrl>https://github.com/ericfisherdev/Logistix</RepositoryUrl>
+        <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>9.0</LangVersion>
-        <Authors>Semar</Authors>
-        
+        <Authors>Eric Fisher</Authors>
+
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -46,6 +47,7 @@
         <None Remove="META-INF\MANIFEST.MF" />
         <None Remove="compile.ps1" />
         <None Remove="PersonalLogistics.zip" />
+        <None Remove="Logistix.zip" />
         <None Remove="PLU\**" />
     </ItemGroup>
 

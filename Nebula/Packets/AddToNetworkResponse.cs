@@ -4,9 +4,9 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.Model;
+using Logistix.Model;
 
-namespace PersonalLogistics.Nebula.Packets
+namespace Logistix.Nebula.Packets
 {
     public class AddToNetworkResponse
     {

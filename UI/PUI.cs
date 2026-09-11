@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-namespace PersonalLogistics.UI
+namespace Logistix.UI
 {
     public static class Pui
     {

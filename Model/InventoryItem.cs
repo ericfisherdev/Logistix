@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using PersonalLogistics.Util;
+using Logistix.Util;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     [Serializable]
     public class InventoryItem

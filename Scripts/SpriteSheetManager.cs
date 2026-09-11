@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using TMPro;
 using UnityEngine;
 using UnityEngine.TextCore;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public static class SpriteSheetManager
     {

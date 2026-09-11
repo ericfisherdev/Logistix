@@ -11,7 +11,7 @@ jobs:
     if: ${{ github.event.ref == 'refs/heads/master' ||  github.event.ref == 'refs/heads/persist'  }}
 
     env:
-      Solution_Name: PersonalLogistics.csproj
+      Solution_Name: Logistix.csproj
     
     runs-on: windows-latest
     strategy:

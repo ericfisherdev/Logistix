@@ -1,8 +1,8 @@
-﻿using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+﻿using Logistix.ModPlayer;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.UGUI
+namespace Logistix.UGUI
 {
     public static class ActionWindow
     {

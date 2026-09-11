@@ -1,4 +1,4 @@
-﻿namespace PersonalLogistics.ModPlayer
+﻿namespace Logistix.ModPlayer
 {
     public interface IPlayerContext
     {

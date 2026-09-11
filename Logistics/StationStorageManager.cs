@@ -2,14 +2,14 @@ using System;
 using System.Runtime.InteropServices;
 using CommonAPI.Systems;
 using JetBrains.Annotations;
-using PersonalLogistics.Model;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.Nebula.Client;
-using PersonalLogistics.Shipping;
+using Logistix.Model;
+using Logistix.Nebula;
+using Logistix.Nebula.Client;
+using Logistix.Shipping;
 using UnityEngine;
-using static PersonalLogistics.Util.Log;
+using static Logistix.Util.Log;
 
-namespace PersonalLogistics.Logistics
+namespace Logistix.Logistics
 {
     public static class StationStorageManager
     {

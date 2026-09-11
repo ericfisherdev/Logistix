@@ -5,15 +5,15 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using HarmonyLib;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.UI;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Scripts;
+using Logistix.UI;
+using Logistix.Util;
 using UnityEngine;
-using static PersonalLogistics.ModPlayer.PlogPlayerRegistry;
-using static PersonalLogistics.UI.UiScaler;
+using static Logistix.ModPlayer.PlogPlayerRegistry;
+using static Logistix.UI.UiScaler;
 
-namespace PersonalLogistics.UGUI
+namespace Logistix.UGUI
 {
     public enum Mode
     {
@@ -76,7 +76,7 @@ namespace PersonalLogistics.UGUI
             switch (mode)
             {
                 case Mode.RequestWindow:
-                    windowRect = GUILayout.Window(1297890112, windowRect, WindowFnWrapper, "Personal Logistics Manager");
+                    windowRect = GUILayout.Window(1297890112, windowRect, WindowFnWrapper, "Logistix Manager");
                     break;
                 case Mode.BufferState:
                     windowRect = GUILayout.Window(1297890113, windowRect, BufferStateWindow.WindowFunction, "Buffered items");

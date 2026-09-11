@@ -6,7 +6,7 @@ using NebulaAPI.Networking;
 using NebulaAPI.Packets;
 using UnityEngine;
 
-namespace PersonalLogistics.Nebula.Packets
+namespace Logistix.Nebula.Packets
 {
     public class RemoveFromNetworkRequest
     {

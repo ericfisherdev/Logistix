@@ -4,12 +4,12 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula.Packets;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Nebula.Packets;
+using Logistix.SerDe;
+using Logistix.Util;
 
-namespace PersonalLogistics.Nebula.Client
+namespace Logistix.Nebula.Client
 {
     [RegisterPacketProcessor]
     public class RemoveFromNetworkResponseProcessor : BasePacketProcessor<RemoveFromNetworkResponse>

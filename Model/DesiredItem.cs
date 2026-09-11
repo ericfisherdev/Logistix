@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     [Serializable]
     public class DesiredItem

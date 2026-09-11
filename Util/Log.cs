@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using BepInEx.Logging;
 
-namespace PersonalLogistics.Util
+namespace Logistix.Util
 {
     public static class Log
     {

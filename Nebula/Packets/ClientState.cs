@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using PersonalLogistics.ModPlayer;
+using Logistix.ModPlayer;
 
-namespace PersonalLogistics.Nebula.Packets
+namespace Logistix.Nebula.Packets
 {
     public class ClientState
     {

@@ -6,7 +6,7 @@ using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
 
-namespace PersonalLogistics.ModPlayer
+namespace Logistix.ModPlayer
 {
     public class PlogRemotePlayer : PlogPlayer
     {

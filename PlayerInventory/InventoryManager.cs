@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.Nebula.Client;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Nebula;
+using Logistix.Nebula.Client;
+using Logistix.Scripts;
+using Logistix.SerDe;
+using Logistix.Util;
 using UnityEngine;
-using static PersonalLogistics.Util.Constant;
+using static Logistix.Util.Constant;
 
-namespace PersonalLogistics.PlayerInventory
+namespace Logistix.PlayerInventory
 {
     public class InventoryManager : InstanceSerializer
     {

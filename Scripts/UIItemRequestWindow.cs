@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Linq;
 using CommonAPI.Systems;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.UGUI;
-using PersonalLogistics.Util;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.UGUI;
+using Logistix.Util;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public class UIItemRequestWindow : ManualBehaviour
     {

@@ -2,13 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using PersonalLogistics.Logistics;
+using Logistix.Logistics;
 using UnityEngine;
-using static PersonalLogistics.ModPlayer.PlogPlayerRegistry;
-using static PersonalLogistics.Util.Log;
+using static Logistix.ModPlayer.PlogPlayerRegistry;
+using static Logistix.Util.Log;
 using Object = UnityEngine.Object;
 
-namespace PersonalLogistics.UI
+namespace Logistix.UI
 {
     public class UINetworkStatusTip
     {
@@ -50,7 +50,7 @@ namespace PersonalLogistics.UI
             if (desiredItem.IsNonRequested() && !desiredItem.IsRecycle())
             {
                 // neither banned nor requested
-                _instance.categoryText.text = "Not managed by Personal Logistics";
+                _instance.categoryText.text = "Not managed by Logistix";
             }
             else if (desiredItem.IsBanned())
             {

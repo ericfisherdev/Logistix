@@ -4,10 +4,10 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula.Packets;
+using Logistix.ModPlayer;
+using Logistix.Nebula.Packets;
 
-namespace PersonalLogistics.Nebula.Client
+namespace Logistix.Nebula.Client
 {
     [RegisterPacketProcessor]
     public class AddToNetworkResponseProcessor : BasePacketProcessor<AddToNetworkResponse>

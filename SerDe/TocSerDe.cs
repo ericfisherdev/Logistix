@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Util;
 
-namespace PersonalLogistics.SerDe
+namespace Logistix.SerDe
 {
     /// <summary>Try and isolate failures from affecting other parts by building a map of offsets similar to how the plugin does </summary>
     public abstract class TocBasedSerDe : ISerDe

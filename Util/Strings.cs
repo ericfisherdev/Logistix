@@ -3,7 +3,7 @@ using CommonAPI.Systems;
 using HarmonyLib;
 using xiaoye97;
 
-namespace PersonalLogistics.Util
+namespace Logistix.Util
 {
     public static class Strings
     {
@@ -42,16 +42,16 @@ namespace PersonalLogistics.Util
                 "(Banned) recycle this item immediately if found in inventory",
                 "禁止，自动回收");
             RegisterString("PLOGTrash management title",
-                "Personal Logistics Trash Management",
+                "Logistix Trash Management",
                 "个人物流垃圾管理");
             RegisterString("PLOGTrash management popup message",
-                "The Personal Logistics mod is configured to send trashed items to logistics stations. \r\n" +
+                "The Logistix mod is configured to send trashed items to logistics stations. \r\n" +
                 "This dialog is to let you know that the feature is currently enabled.\r\n" +
                 "If this behavior is not what you want then click \"Cancel\" and the feature will be disabled\r\n" +
                 "If you click \"Ok\" then this popup will not be shown again.",
                 "确认发送垃圾物品至物流网络");
 
-            RegisterString("KEYShowPlogWindow", "Show Personal Logistics Window");
+            RegisterString("KEYShowPlogWindow", "Show Logistix Window");
 
             // Incoming items stuff
             // item name should be {0}, count is {1}

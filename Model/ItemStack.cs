@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
-using PersonalLogistics.Util;
+using Logistix.Util;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     public class ItemStack
     {

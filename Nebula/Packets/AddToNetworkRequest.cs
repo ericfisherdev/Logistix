@@ -4,10 +4,10 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
+using Logistix.Model;
+using Logistix.ModPlayer;
 
-namespace PersonalLogistics.Nebula.Packets
+namespace Logistix.Nebula.Packets
 {
     public class AddToNetworkRequest
     {

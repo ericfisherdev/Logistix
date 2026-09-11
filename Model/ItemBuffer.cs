@@ -2,11 +2,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.Nebula.Client;
-using PersonalLogistics.Util;
+using Logistix.Nebula;
+using Logistix.Nebula.Client;
+using Logistix.Util;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     public class ItemBuffer
     {

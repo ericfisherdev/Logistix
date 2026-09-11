@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Logistics
+namespace Logistix.Logistics
 {
     public class StationInfo
     {

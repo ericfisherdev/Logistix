@@ -1,13 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using PersonalLogistics.PlayerInventory;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.Shipping;
-using PersonalLogistics.Util;
+using Logistix.PlayerInventory;
+using Logistix.Scripts;
+using Logistix.Shipping;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.ModPlayer
+namespace Logistix.ModPlayer
 {
     public class PlogPlayerPosition
     {
