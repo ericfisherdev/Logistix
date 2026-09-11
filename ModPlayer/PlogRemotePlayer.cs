@@ -1,17 +1,9 @@
 ﻿using System;
-using NebulaAPI;
-using NebulaAPI.DataStructures;
-using NebulaAPI.GameState;
-using NebulaAPI.Interfaces;
-using NebulaAPI.Networking;
-using NebulaAPI.Packets;
 
 namespace Logistix.ModPlayer
 {
     public class PlogRemotePlayer : PlogPlayer
     {
-        public INebulaPlayer NebulaPlayer;
-
         public PlogRemotePlayer(PlogPlayerId playerId) : base(playerId, true)
         {
         }

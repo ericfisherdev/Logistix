@@ -1,6 +1,5 @@
 ﻿using NebulaAPI;
 using NebulaAPI.DataStructures;
-using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
@@ -26,10 +25,7 @@ namespace Logistix.Nebula.Host
                 // don't be too chatty, just let them assume (correctly) that he item was added
                 return;
             }
-            INetworkProvider network = NebulaModAPI.MultiplayerSession.Network;
-            var nebulaPlayer = network.PlayerManager.GetPlayer(conn);
-            
-            nebulaPlayer.SendPacket(new AddToNetworkResponse(
+            conn.SendPacket(new AddToNetworkResponse(
                 packet.clientId,
                 packet.itemId, 
                 remainingItemStack));
