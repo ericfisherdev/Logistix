@@ -405,9 +405,11 @@ namespace Logistix.Scripts
             container.sizeDelta = new Vector2(200, 30);
             container.anchoredPosition = anchor + new Vector2(0, -140);
 
-            // Left inactive (CloneInactive's own contract): only OnSelectedItemChange/_OnCreate
-            // decide when this is actually shown, based on whether the selected item is a fuel
-            // item and PluginConfig.addFuelToMecha is on.
+            // CloneInactive leaves the clone itself inactive; that used to be the only thing
+            // gating visibility, back when enableFuelContainer was the toggle's own rectTransform.
+            // Now that the container is the show/hide switch (see the comment above), the clone
+            // must be reactivated once it's fully configured, further down -- OnSelectedItemChange
+            // only toggles the container's GameObject and never reaches the clone itself.
             var clone = DspUiClone.CloneInactive(deliveryToggleDonor.gameObject, container, "fuel-toggle");
             var clonedToggle = clone.GetComponent<UIToggle>();
             if (clonedToggle == null || clonedToggle.toggle == null)
@@ -448,6 +450,11 @@ namespace Logistix.Scripts
                 image.color = clonedToggle.toggle.isOn ? Color.green : Color.gray;
                 clonedToggle.toggle.onValueChanged.AddListener(isOn => image.color = isOn ? Color.green : Color.gray);
             }
+
+            // The container -- not the clone -- is what OnSelectedItemChange shows/hides; the
+            // clone must be active inside it now that its persistent listeners and isOn are
+            // settled, or the container/label render with no visible toggle.
+            clone.SetActive(true);
 
             clonedToggle.rectTransform.anchoredPosition = Vector2.zero;
 
