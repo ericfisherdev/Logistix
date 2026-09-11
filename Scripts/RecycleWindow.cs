@@ -26,6 +26,8 @@ namespace Logistix.Scripts
         private const float PanelGapBelowWindow = 4f;
         private const float TitleHeight = 20f;
         private const float HintHeight = 16f;
+        private static readonly Color CheckOnColour = new(0.8f, 0.8f, 0.8f, 1f);
+        private static readonly Color CheckOffColour = new(0.35f, 0.35f, 0.35f, 1f);
 
         private static RecycleWindow _instance;
         private static readonly int buffer = Shader.PropertyToID("_StateBuffer");
@@ -38,6 +40,12 @@ namespace Logistix.Scripts
         private GameObject _instanceGo;
         private bool _openRequested;
         private StorageComponent _storageComponent;
+
+        // AddShowRecycleCheck() shrinks UIGame.inventoryWindow.titleText and Unload() never
+        // restores it, so the donor's original size is captured once (first build) and applied
+        // to the cloned "Recycle" title explicitly rather than inherited from whatever the
+        // donor's current (possibly already-shrunk) size happens to be.
+        private int _donorTitleFontSize;
 
         private uint[] iconIndexArray;
         private ComputeBuffer iconIndexBuffer;
@@ -78,8 +86,7 @@ namespace Logistix.Scripts
             if (PluginConfig.IsPaused() && _instanceGo != null && _instance.gameObject.activeSelf)
             {
                 _instanceGo.SetActive(false);
-                if (checkBoxImage != null)
-                    checkBoxImage.sprite = sprOff;
+                SetCheckBoxState(false);
             }
 
             // remove recycle window as target for shift clicking logistics vessels/bots when another station window is open
@@ -176,9 +183,37 @@ namespace Logistix.Scripts
             }
 
             Log.Debug("Building Recycle window panel");
-            var windowTrans = inventoryWindow.windowTrans;
-
             var panelGo = new GameObject("Logistix Recycle Panel", typeof(RectTransform), typeof(Image));
+
+            // PopulateRecyclePanel progressively assigns uiStorageGrid/_storageComponent as it
+            // builds, and only clears the persisted _gridItems once everything below has
+            // succeeded. A throw partway through (the clone's first-ever _OnInit()/
+            // OnStorageDataChanged() call against a grid with its pooled Text children
+            // destroyed, or AddShowRecycleCheck's resource loads, are not verifiable without
+            // the game) must not orphan imported items or leave uiStorageGrid pointing at a
+            // half-built clone that Export()/RemoveFromStorageImpl() would read from.
+            try
+            {
+                PopulateRecyclePanel(panelGo, inventoryWindow);
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"Recycle window: panel build failed, unwinding so the next open retries. {e.Message}\n{e.StackTrace}");
+                if (uiStorageGrid != null && uiStorageGrid.storage != null)
+                    uiStorageGrid.storage.onStorageChange -= RecordStorageChange;
+                uiStorageGrid = null;
+                _storageComponent = null;
+                Destroy(panelGo);
+                return;
+            }
+
+            _gridItems.Clear();
+            _instanceGo = panelGo;
+        }
+
+        private void PopulateRecyclePanel(GameObject panelGo, UIInventoryWindow inventoryWindow)
+        {
+            var windowTrans = inventoryWindow.windowTrans;
             var panelRect = (RectTransform)panelGo.transform;
             panelRect.SetParent(windowTrans, false);
             panelRect.anchorMin = new Vector2(0f, 0f);
@@ -200,9 +235,13 @@ namespace Logistix.Scripts
                 Log.Warn($"Recycle window: no donor Image found under {windowTrans.name}, panel background left blank");
             }
 
-            // Clone the (not-yet-shrunk) inventory title so the panel's own title keeps its
-            // original size; AddShowRecycleCheck() below shrinks the donor afterwards.
+            // AddShowRecycleCheck() shrinks the donor and Unload() never restores it, so the
+            // clone applies the size captured once in _donorTitleFontSize rather than
+            // whatever the donor's current (possibly already-shrunk) size happens to be.
+            if (_donorTitleFontSize == 0)
+                _donorTitleFontSize = inventoryWindow.titleText.fontSize;
             var titleText = DspUiClone.CloneText(inventoryWindow.titleText, panelRect, "recycle-title", "PLOGrecycle".Translate());
+            titleText.fontSize = _donorTitleFontSize;
             var titleRect = (RectTransform)titleText.transform;
             titleRect.anchorMin = new Vector2(0f, 1f);
             titleRect.anchorMax = new Vector2(1f, 1f);
@@ -251,7 +290,6 @@ namespace Logistix.Scripts
                 Log.Debug($"Imported item to recycle window {persistedGridItem}");
             }
 
-            _gridItems.Clear();
             RecordStorageChange();
 
             uiStorageGrid.OnStorageDataChanged();
@@ -270,7 +308,6 @@ namespace Logistix.Scripts
 
             panelGo.SetActive(true);
             gridGo.SetActive(true);
-            _instanceGo = panelGo;
         }
 
         /// <summary>
@@ -286,6 +323,20 @@ namespace Logistix.Scripts
             {
                 Destroy(text.gameObject);
             }
+        }
+
+        /// <summary>
+        /// Sets the checkbox's sprite for the on/off state; when <see cref="texOn"/>/
+        /// <see cref="texOff"/> weren't found and <see cref="sprOn"/>/<see cref="sprOff"/> are
+        /// both null, the sprite alone can't show the state (it's null either way), so the
+        /// colour carries it instead.
+        /// </summary>
+        private void SetCheckBoxState(bool on)
+        {
+            if (checkBoxImage == null)
+                return;
+            checkBoxImage.sprite = on ? sprOn : sprOff;
+            checkBoxImage.color = on || sprOn != null ? CheckOnColour : CheckOffColour;
         }
 
         private void AddShowRecycleCheck(UIInventoryWindow inventoryWindow)
@@ -324,7 +375,7 @@ namespace Logistix.Scripts
                 if (_instanceGo != null)
                 {
                     _instanceGo.SetActive(!_instanceGo.activeSelf);
-                    checkBoxImage.sprite = _instanceGo.activeSelf ? sprOn : sprOff;
+                    SetCheckBoxState(_instanceGo.activeSelf);
                     if (_instanceGo.activeSelf)
                     {
                         // we just activated, make sure we've recorded all the things in our delay buffer
@@ -333,8 +384,7 @@ namespace Logistix.Scripts
                 }
             });
             checkBoxImage = _btn.gameObject.AddComponent<Image>();
-            checkBoxImage.color = new Color(0.8f, 0.8f, 0.8f, 1);
-            checkBoxImage.sprite = sprOn;
+            SetCheckBoxState(true);
 
             txtGO = new GameObject("displayRecycleWindowCheckText");
             var textRectTransform = txtGO.AddComponent<RectTransform>();
