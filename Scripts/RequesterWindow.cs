@@ -95,7 +95,7 @@ namespace Logistix.Scripts
             // itself is destroyed.
             try
             {
-                itemRequestWindow = PopulateWindow(go, donor);
+                itemRequestWindow = PopulateWindow(go, donor, uiGame);
                 itemRequestWindow._Create();
                 itemRequestWindow._Init(GameMain.mainPlayer);
                 itemRequestWindow._Close();
@@ -114,7 +114,7 @@ namespace Logistix.Scripts
             _instanceGo = go;
         }
 
-        private UIItemRequestWindow PopulateWindow(GameObject go, UIReplicatorWindow donor)
+        private UIItemRequestWindow PopulateWindow(GameObject go, UIReplicatorWindow donor, UIGame uiGame)
         {
             var clonedReplicator = go.GetComponent<UIReplicatorWindow>();
 
@@ -195,6 +195,14 @@ namespace Logistix.Scripts
 
             RetitleWindow(windowRect);
 
+            // #20's additive controls (Recycle spinner, selected-item icon, Current/Update
+            // summary, play/pause, Settings, fuel toggle). Built before the persistent-listener
+            // sweep and WireCloseButton below so both also see these new clones -- each one
+            // carries the same donor persistent-listener hazard the harvested controls do, and
+            // WireCloseButton's elimination search must exclude them or it can pick one of them
+            // as the close button.
+            BuildAdditiveControls(uiItemRequest, uiGame, minPlusButton, minMinusButton, multiValueText, confirmButton, typeButton2);
+
             // Cloning a Unity prefab carries over inspector-assigned (persistent) UnityEvent
             // listeners, which keep targeting the original UIGame's replicator components even
             // after those components are destroyed above. RemoveAllListeners() doesn't touch
@@ -205,10 +213,232 @@ namespace Logistix.Scripts
                 DspUiClone.DisablePersistentListeners(button);
             }
 
-            WireCloseButton(go, uiItemRequest, allButtons, typeButton1, typeButton2, minPlusButton, minMinusButton, confirmButton);
+            WireCloseButton(go, uiItemRequest, allButtons, typeButton1, typeButton2, minPlusButton, minMinusButton, confirmButton,
+                uiItemRequest.maxPlusButton, uiItemRequest.maxMinusButton, uiItemRequest.pauseButton, uiItemRequest.playButton, uiItemRequest.settingsButton);
 
             go.SetActive(true);
             return uiItemRequest;
+        }
+
+        /// <summary>
+        /// Builds the controls the original prefab had that the live replicator's own controls
+        /// don't (#20): the Recycle spinner, the selected item's icon, the Current/Update summary
+        /// texts, play/pause, Settings, and the per-item fuel toggle. Each sub-builder is
+        /// independent and best-effort -- a donor piece that can't be found (fuel toggle) logs a
+        /// warning and leaves its fields null rather than failing the whole window build, same
+        /// contract #17 established for these fields.
+        /// </summary>
+        private static void BuildAdditiveControls(UIItemRequestWindow uiItemRequest, UIGame uiGame,
+            UIButton minPlusButton, UIButton minMinusButton, Text multiValueText, UIButton confirmButton, UIButton typeButton2)
+        {
+            BuildRecycleSpinner(uiItemRequest, minPlusButton, minMinusButton, multiValueText);
+            BuildSelectedItemDisplay(uiItemRequest, multiValueText);
+            BuildPlayPauseButtons(uiItemRequest, confirmButton);
+            BuildSettingsButton(uiItemRequest, typeButton2);
+            BuildFuelToggle(uiItemRequest, uiGame, multiValueText);
+        }
+
+        /// <summary>
+        /// The Recycle spinner (max stacks before auto-recycle; Request 0 + Recycle 0 = ban) is a
+        /// clone of the harvested Request spinner, offset beside it. Donor positions are read up
+        /// front into locals before anything is cloned -- #17 only guarantees these three share a
+        /// common parent, not a specific layout, and capturing them explicitly instead of
+        /// re-deriving them later keeps this independent of that layout (see #16's review finding
+        /// on capturing donor state explicitly rather than trusting it implicitly).
+        /// </summary>
+        private static void BuildRecycleSpinner(UIItemRequestWindow uiItemRequest, UIButton minPlusButton, UIButton minMinusButton, Text multiValueText)
+        {
+            const float columnOffset = 160f;
+            var minPlusPos = ((RectTransform)minPlusButton.transform).anchoredPosition;
+            var minMinusPos = ((RectTransform)minMinusButton.transform).anchoredPosition;
+            var multiValuePos = multiValueText.rectTransform.anchoredPosition;
+
+            var maxPlusButton = DspUiClone.CloneComponent(minPlusButton, minPlusButton.transform.parent, "max-plus-button");
+            ((RectTransform)maxPlusButton.transform).anchoredPosition = minPlusPos + new Vector2(columnOffset, 0);
+
+            var maxMinusButton = DspUiClone.CloneComponent(minMinusButton, minMinusButton.transform.parent, "max-minus-button");
+            ((RectTransform)maxMinusButton.transform).anchoredPosition = minMinusPos + new Vector2(columnOffset, 0);
+
+            var multiValueMaxText = DspUiClone.CloneText(multiValueText, multiValueText.transform.parent, "multi-value-max-text", "Inf");
+            multiValueMaxText.rectTransform.anchoredPosition = multiValuePos + new Vector2(columnOffset, 0);
+
+            var recycleLabel = DspUiClone.CloneText(multiValueText, multiValueText.transform.parent, "recycle-label", "PLOGrecycle".Translate());
+            recycleLabel.rectTransform.anchoredPosition = multiValuePos + new Vector2(columnOffset, 20);
+
+            uiItemRequest.maxPlusButton = maxPlusButton;
+            uiItemRequest.maxMinusButton = maxMinusButton;
+            uiItemRequest.multiValueMaxText = multiValueMaxText;
+        }
+
+        /// <summary>
+        /// Selected-item icon and the Current/Update summary texts. selectedItemRequestSummary
+        /// needs its own dedicated parent RectTransform: OnSelectedItemChange toggles
+        /// <c>selectedItemRequestSummary.transform.parent.gameObject</c> directly, so sharing a
+        /// parent with anything else would show/hide that control too.
+        /// </summary>
+        private static void BuildSelectedItemDisplay(UIItemRequestWindow uiItemRequest, Text multiValueText)
+        {
+            var anchor = multiValueText.rectTransform.anchoredPosition;
+            var parent = multiValueText.transform.parent;
+
+            // A programmatically created RectTransform defaults to 100x100 and silently squashes
+            // its content (see #6's review finding); size it explicitly to the grid's own cell
+            // size instead of leaving the default.
+            var iconGo = new GameObject("selected-item-icon", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(parent, false);
+            var iconRect = (RectTransform)iconGo.transform;
+            iconRect.sizeDelta = new Vector2(UIReplicatorWindow.kGridSize, UIReplicatorWindow.kGridSize);
+            iconRect.anchoredPosition = anchor + new Vector2(80, 70);
+            var selectItemIcon = iconGo.GetComponent<Image>();
+            selectItemIcon.preserveAspect = true;
+
+            var currentLabel = DspUiClone.CloneText(multiValueText, parent, "current-label", "PLOGCurrent".Translate());
+            currentLabel.rectTransform.anchoredPosition = anchor + new Vector2(0, -40);
+            var selectedItemCurrentState = DspUiClone.CloneText(multiValueText, parent, "current-value", "");
+            selectedItemCurrentState.rectTransform.anchoredPosition = anchor + new Vector2(0, -60);
+
+            var updateLabel = DspUiClone.CloneText(multiValueText, parent, "update-label", "PLOGUpdated".Translate());
+            updateLabel.rectTransform.anchoredPosition = anchor + new Vector2(0, -90);
+
+            var summaryContainerGo = new GameObject("update-value-container", typeof(RectTransform));
+            summaryContainerGo.transform.SetParent(parent, false);
+            var summaryContainerRect = (RectTransform)summaryContainerGo.transform;
+            summaryContainerRect.sizeDelta = new Vector2(200, 40);
+            summaryContainerRect.anchoredPosition = anchor + new Vector2(0, -110);
+            var selectedItemRequestSummary = DspUiClone.CloneText(multiValueText, summaryContainerRect, "update-value", "");
+            selectedItemRequestSummary.rectTransform.anchoredPosition = Vector2.zero;
+
+            uiItemRequest.selectItemIcon = selectItemIcon;
+            uiItemRequest.selectedItemCurrentState = selectedItemCurrentState;
+            uiItemRequest.selectedItemRequestSummary = selectedItemRequestSummary;
+        }
+
+        /// <summary>
+        /// Clones of the harvested Save button; only one of the two is ever active at a time
+        /// (UIItemRequestWindow.SyncPlayPauseButtons), so both occupy the same position.
+        /// </summary>
+        private static void BuildPlayPauseButtons(UIItemRequestWindow uiItemRequest, UIButton confirmButton)
+        {
+            var anchor = ((RectTransform)confirmButton.transform).anchoredPosition;
+            var parent = confirmButton.transform.parent;
+            var position = anchor + new Vector2(160, -40);
+
+            var pauseButton = DspUiClone.CloneComponent(confirmButton, parent, "pause-button");
+            ((RectTransform)pauseButton.transform).anchoredPosition = position;
+            RelabelButton(pauseButton, "PLOGPause".Translate());
+
+            var playButton = DspUiClone.CloneComponent(confirmButton, parent, "play-button");
+            ((RectTransform)playButton.transform).anchoredPosition = position;
+            RelabelButton(playButton, "PLOGPlay".Translate());
+            // Not paused is the common default (PluginConfig.IsPaused() == false); Pause visible,
+            // Play hidden matches what SyncPlayPauseButtons would set on the first _OnUpdate, so
+            // there's no frame where both show before that runs.
+            playButton.gameObject.SetActive(false);
+
+            uiItemRequest.pauseButton = pauseButton;
+            uiItemRequest.playButton = playButton;
+        }
+
+        private static void RelabelButton(UIButton button, string text)
+        {
+            var label = button.button.GetComponentInChildren<Text>();
+            if (label == null)
+            {
+                Log.Warn($"Requester window: {button.name} has no child Text to relabel");
+                return;
+            }
+
+            // Same reason as the Save label in PopulateWindow: strip the donor's Localizer before
+            // writing so it doesn't reassert the donor's own text on the next OnEnable/language
+            // change.
+            DspUiClone.StripLocalizers(label.gameObject);
+            label.text = text;
+        }
+
+        /// <summary>
+        /// Clone of typeButton2 (the Buildings tab), reused purely for its DSP-styled UIButton
+        /// chrome. Keeps the donor's own icon; swapping it for the embedded Logistix logo is
+        /// #18's AssetBundle-removal work, not this issue's.
+        /// </summary>
+        private static void BuildSettingsButton(UIItemRequestWindow uiItemRequest, UIButton typeButton2)
+        {
+            var anchor = ((RectTransform)typeButton2.transform).anchoredPosition;
+            var settingsButton = DspUiClone.CloneComponent(typeButton2, typeButton2.transform.parent, "settings-button");
+            ((RectTransform)settingsButton.transform).anchoredPosition = anchor + new Vector2(140, 0);
+            // typeButton2 is cloned mid-tab-selection styling (highlighted/non-interactable
+            // depending on whatever currentType happened to be on the live replicator when this
+            // was cloned -- see #16's review finding); Settings isn't a tab, so force it back to
+            // its own steady state instead of carrying that over.
+            settingsButton.highlighted = false;
+            settingsButton.button.interactable = true;
+            settingsButton.tips.tipTitle = "PLOGSettingsTipTitle".Translate();
+            settingsButton.tips.tipText = "PLOGSettingsTipText".Translate();
+
+            uiItemRequest.settingsButton = settingsButton;
+        }
+
+        /// <summary>
+        /// Per-item mecha-fuel toggle, cloned from the real player delivery panel's own toggle
+        /// (UIGame.inventoryWindow.deliveryPanel.deliveryToggle) so its styling matches DSP. Every
+        /// hop of that chain is checked (see #6's review finding on unguarded UIRoot.instance
+        /// chains) since none of it is covered by BuildWindow's own donor-readiness check, which
+        /// only confirms the replicator and inventory window themselves are present.
+        /// </summary>
+        private static void BuildFuelToggle(UIItemRequestWindow uiItemRequest, UIGame uiGame, Text multiValueText)
+        {
+            var deliveryPanel = uiGame != null ? uiGame.inventoryWindow?.deliveryPanel : null;
+            var deliveryToggleDonor = deliveryPanel != null ? deliveryPanel.deliveryToggle : null;
+            if (deliveryToggleDonor == null || deliveryToggleDonor.gameObject == null)
+            {
+                Log.Warn("Requester window: delivery panel fuel toggle donor not found; fuel toggle will not be built");
+                return;
+            }
+
+            var parent = multiValueText.transform.parent;
+            // Left inactive (CloneInactive's own contract): only OnSelectedItemChange/_OnCreate
+            // decide when this is actually shown, based on whether the selected item is a fuel
+            // item and PluginConfig.addFuelToMecha is on.
+            var clone = DspUiClone.CloneInactive(deliveryToggleDonor.gameObject, parent, "fuel-toggle");
+            var clonedToggle = clone.GetComponent<UIToggle>();
+            if (clonedToggle == null || clonedToggle.toggle == null)
+            {
+                Log.Warn("Requester window: cloned fuel toggle is missing its UIToggle/Toggle component; fuel toggle will not be built");
+                Destroy(clone);
+                return;
+            }
+
+            // The donor's inspector-assigned onValueChanged listener still targets the real
+            // UIPlayerDeliveryPanel.OnDeliveryToggleChange after cloning (same hazard as the
+            // Button persistent-listener issue DisablePersistentListeners(Button) already guards
+            // against elsewhere in this method) -- left enabled, clicking this clone would
+            // silently mutate the player's actual delivery settings.
+            DspUiClone.DisablePersistentListeners(clonedToggle.toggle);
+
+            // The donor is the player's real delivery toggle, so its current isOn reflects
+            // whatever the player has that set to right now, not this item's fuel state (see
+            // #16's review finding on capturing donor state instead of trusting whatever it
+            // happens to hold at clone time). OnSelectedItemChange sets the real value once an
+            // item is selected; until then this must not show a leftover value from the donor.
+            clonedToggle.toggle.isOn = false;
+
+            // Neither sprite is guaranteed non-null on every donor styling, and a toggle with both
+            // null renders identically on/off (see #6's review finding); fall back to a colour
+            // tint so the control is never silently invisible.
+            if (clonedToggle.onSprite == null && clonedToggle.offSprite == null && clonedToggle.image != null)
+            {
+                var image = clonedToggle.image;
+                image.color = clonedToggle.toggle.isOn ? Color.green : Color.gray;
+                clonedToggle.toggle.onValueChanged.AddListener(isOn => image.color = isOn ? Color.green : Color.gray);
+            }
+
+            var anchor = multiValueText.rectTransform.anchoredPosition;
+            clonedToggle.rectTransform.anchoredPosition = anchor + new Vector2(0, -140);
+
+            var fuelLabel = DspUiClone.CloneText(multiValueText, parent, "fuel-toggle-label", "PLOGenableFuel".Translate());
+            fuelLabel.rectTransform.anchoredPosition = anchor + new Vector2(40, -140);
+
+            uiItemRequest.enableFuelContainer = clonedToggle.rectTransform;
+            uiItemRequest.enableFuelToggle = clonedToggle.toggle;
         }
 
         private static void DestroyChildIfNotNull(Component component)
