@@ -8,8 +8,6 @@ bin/
 obj/
 Logistix.csproj.user
 *.user
-/tmp_release/README.md
-/tmp/README.md
 Unity
 /PLU/PLU/
-/tmp_release/
+/dist/

@@ -194,6 +194,16 @@ Dependencies (Thunderstore versions this release was built against):
 
 Click the `Install with Mod Manager` link above. Make sure dependencies are installed, when prompted
 
+## Building from source
+
+```
+dotnet build Logistix.csproj -c Release
+```
+
+produces a Thunderstore-ready `dist/Logistix-<version>.zip`. To cut a release, bump `<Version>` in
+`Logistix.csproj` first — it drives both the plugin version and the package's `manifest.json`.
+Debug builds do not produce a zip.
+
 ## Changelog
 
 #### v1.0.0

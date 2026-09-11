@@ -41,7 +41,7 @@ namespace Logistix
     {
         private const string PluginGuid = "ericfisherdev.dysonsphereprogram.Logistix";
         private const string PluginName = "Logistix";
-        private const string PluginVersion = "1.0.0";
+        private const string PluginVersion = BuildInfo.Version;
         private const float InventorySyncInterval = 4.5f;
         private static readonly int VERSION = 2;
 
