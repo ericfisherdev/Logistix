@@ -1,0 +1,95 @@
+<Project>
+
+    <!--
+        Packages the built plugin into a Thunderstore-ready zip. Replaces package.ps1 and
+        Invoke-MsBuild.psm1 with a target that runs anywhere `dotnet build` runs.
+
+        Usage: dotnet build Logistix.csproj -c Release
+        Output: dist/Logistix-<Version>.zip
+    -->
+
+    <PropertyGroup>
+        <ThunderstorePackageName Condition="'$(ThunderstorePackageName)' == ''">$(AssemblyName)</ThunderstorePackageName>
+        <ThunderstoreStagingDir>$(BaseIntermediateOutputPath)thunderstore\</ThunderstoreStagingDir>
+        <ThunderstoreOutputDir>$(MSBuildProjectDirectory)\dist\</ThunderstoreOutputDir>
+        <ThunderstorePackageFile>$(ThunderstoreOutputDir)$(ThunderstorePackageName)-$(Version).zip</ThunderstorePackageFile>
+    </PropertyGroup>
+
+    <!-- Thunderstore-only dependency pins. Each version below is also derived from a
+         shared csproj property so it can never drift from the matching PackageReference,
+         except xiaoye97-BepInEx: BepInEx.Core resolves 5.4.21 on NuGet, but xiaoye97-BepInEx
+         on Thunderstore only publishes up to 5.4.17, so that one value cannot be derived
+         from the NuGet pin and is held here explicitly. -->
+    <ItemGroup>
+        <ThunderstoreDependency Include="xiaoye97-BepInEx" Version="$(ThunderstoreBepInExVersion)" />
+        <ThunderstoreDependency Include="xiaoye97-LDBTool" Version="$(LDBToolVersion)" />
+        <ThunderstoreDependency Include="CommonAPI-CommonAPI" Version="$(CommonAPIVersion)" />
+        <ThunderstoreDependency Include="CommonAPI-DSPModSave" Version="$(DSPModSaveVersion)" />
+        <ThunderstoreDependency Include="nebula-NebulaMultiplayerModApi" Version="$(NebulaModApiVersion)" />
+    </ItemGroup>
+
+    <!-- The BepInEx plugin version is generated at compile time from the csproj <Version>,
+         so the manifest's version_number and the BepInPlugin attribute can never disagree. -->
+    <Target Name="GenerateBuildInfo" BeforeTargets="CoreCompile">
+        <PropertyGroup>
+            <BuildInfoFile>$(IntermediateOutputPath)BuildInfo.g.cs</BuildInfoFile>
+        </PropertyGroup>
+        <ItemGroup>
+            <BuildInfoLines Include="// &lt;auto-generated/&gt;" />
+            <BuildInfoLines Include="namespace Logistix" />
+            <BuildInfoLines Include="{" />
+            <BuildInfoLines Include="    internal static class BuildInfo" />
+            <BuildInfoLines Include="    {" />
+            <BuildInfoLines Include="        public const string Version = &quot;$(Version)&quot;%3B" />
+            <BuildInfoLines Include="    }" />
+            <BuildInfoLines Include="}" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(BuildInfoFile)" Lines="@(BuildInfoLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <Compile Include="$(BuildInfoFile)" />
+            <FileWrites Include="$(BuildInfoFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ThunderstorePackage" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+
+        <Error Condition="!Exists('icon.png')" Text="ThunderstorePackage: icon.png is required at the repo root to build a Thunderstore package." />
+        <Error Condition="!Exists('readme.md')" Text="ThunderstorePackage: readme.md is required at the repo root to build a Thunderstore package." />
+
+        <RemoveDir Directories="$(ThunderstoreStagingDir)" Condition="Exists('$(ThunderstoreStagingDir)')" />
+        <MakeDir Directories="$(ThunderstoreStagingDir)" />
+
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ThunderstoreStagingDir)" />
+        <Copy SourceFiles="readme.md" DestinationFiles="$(ThunderstoreStagingDir)README.md" />
+        <Copy SourceFiles="icon.png" DestinationFolder="$(ThunderstoreStagingDir)" />
+
+        <!-- Item transforms with a custom separator produce an already-joined string, but
+             MSBuild will not let that be concatenated with literal text directly inside an
+             Include attribute (MSB4012) — so join it into a property first. -->
+        <PropertyGroup>
+            <ThunderstoreDependencyList>@(ThunderstoreDependency->'&quot;%(Identity)-%(Version)&quot;', ', ')</ThunderstoreDependencyList>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <ThunderstoreManifestLine Include="{" />
+            <ThunderstoreManifestLine Include="    &quot;name&quot;: &quot;$(ThunderstorePackageName)&quot;," />
+            <ThunderstoreManifestLine Include="    &quot;version_number&quot;: &quot;$(Version)&quot;," />
+            <ThunderstoreManifestLine Include="    &quot;website_url&quot;: &quot;$(PackageProjectUrl)&quot;," />
+            <ThunderstoreManifestLine Include="    &quot;description&quot;: &quot;$(Description)&quot;," />
+            <ThunderstoreManifestLine Include="    &quot;dependencies&quot;: [$(ThunderstoreDependencyList)]" />
+            <ThunderstoreManifestLine Include="}" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(ThunderstoreStagingDir)manifest.json" Lines="@(ThunderstoreManifestLine)" Overwrite="true" />
+
+        <MakeDir Directories="$(ThunderstoreOutputDir)" Condition="!Exists('$(ThunderstoreOutputDir)')" />
+        <ItemGroup>
+            <StaleThunderstorePackage Include="$(ThunderstoreOutputDir)*.zip" />
+        </ItemGroup>
+        <Delete Files="@(StaleThunderstorePackage)" Condition="'@(StaleThunderstorePackage)' != ''" />
+
+        <ZipDirectory SourceDirectory="$(ThunderstoreStagingDir)" DestinationFile="$(ThunderstorePackageFile)" Overwrite="true" />
+
+        <Message Importance="high" Text="Thunderstore package written to $(ThunderstorePackageFile)" />
+    </Target>
+
+</Project>
