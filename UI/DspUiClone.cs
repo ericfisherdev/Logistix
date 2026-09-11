@@ -28,7 +28,14 @@ namespace Logistix.UI
             return clone;
         }
 
-        private static void StripLocalizers(GameObject go)
+        /// <summary>
+        /// Removes any <see cref="Localizer"/> from <paramref name="go"/> so a caller-assigned
+        /// <see cref="Text.text"/> survives the next <c>OnEnable</c>/language change. Public so
+        /// callers relabeling a harvested (not cloned) donor text -- which still carries
+        /// whatever <c>Localizer</c> the donor had -- can apply the same guard <see cref="CloneText"/>
+        /// applies automatically.
+        /// </summary>
+        public static void StripLocalizers(GameObject go)
         {
             foreach (var localizer in go.GetComponents<Localizer>())
             {

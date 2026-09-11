@@ -285,11 +285,11 @@ namespace Logistix.Scripts
 
         private void SyncPlayPauseButtons()
         {
+            // Not built until #20; called from _OnUpdate every frame, so this has to be a
+            // silent no-op (same contract as SetInteractable/SetText) rather than a per-frame
+            // Log.Warn -- these fields are null by design at this midpoint, not an error.
             if (pauseButton == null || playButton == null)
-            {
-                Log.Warn($"play button null ({playButton == null}) OR pause button null ({pauseButton == null}). can't sync button state");
                 return;
-            }
 
             if (PluginConfig.IsPaused())
             {
