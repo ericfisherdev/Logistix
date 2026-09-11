@@ -43,11 +43,15 @@ namespace Logistix.Scripts
         public Text prefabNumText;
         public Text prefabNumRecycleText;
 
-        // Built by the follow-up issue (#20: Recycle spinner, selected-item icon, Current/Update
-        // summary, play/pause, fuel toggle). Left null by RequesterWindow.BuildWindow until then
-        // -- every access below goes through SetInteractable/SetText or an explicit null check so
-        // the window opens and behaves correctly (OnOkButtonClick keeps the item's existing
-        // recycle max) without them.
+        // Built by RequesterWindow.BuildAdditiveControls (#20: Recycle spinner, selected-item
+        // icon, Current/Update summary, play/pause, Settings, fuel toggle). All of these are
+        // assigned on every committed window except enableFuelContainer/enableFuelToggle, which
+        // stay null when the delivery-panel donor chain (UIGame.inventoryWindow.deliveryPanel
+        // .deliveryToggle) is missing -- every other builder either assigns its fields or throws,
+        // which aborts the whole window build rather than leaving a partially-built one. The
+        // SetInteractable/SetText guards below (and the explicit null checks elsewhere in this
+        // class) exist for that one case, plus the brief window between AddComponent and
+        // BuildAdditiveControls running.
         public UIButton maxPlusButton;
         public UIButton maxMinusButton;
         public Text multiValueMaxText;
@@ -60,9 +64,8 @@ namespace Logistix.Scripts
         public Toggle enableFuelToggle;
 
         // Opens the legacy IMGUI settings window (ToggleLegacyRequestWindow). Built and assigned
-        // by RequesterWindow.PopulateWindow alongside the other #20 additive controls; also left
-        // null-tolerant since it shares their build path and can fail to build the same way a
-        // missing donor makes the rest of them null.
+        // by RequesterWindow.BuildSettingsButton; always present on a committed window (see the
+        // field block comment above).
         public UIButton settingsButton;
 
         private UIItemTip screenTip;
@@ -90,7 +93,7 @@ namespace Logistix.Scripts
         private static readonly int buffer = Shader.PropertyToID("_StateBuffer");
         private static readonly int indexBuffer = Shader.PropertyToID("_IndexBuffer");
 
-        /// <summary>No-ops when <paramref name="button"/> hasn't been built yet (#20's scope).</summary>
+        /// <summary>No-ops when <paramref name="button"/> is null (see the #20 field block comment above).</summary>
         private static void SetInteractable(UIButton button, bool interactable)
         {
             if (button == null)
@@ -98,7 +101,7 @@ namespace Logistix.Scripts
             button.button.interactable = interactable;
         }
 
-        /// <summary>No-ops when <paramref name="text"/> hasn't been built yet (#20's scope).</summary>
+        /// <summary>No-ops when <paramref name="text"/> is null (see the #20 field block comment above).</summary>
         private static void SetText(Text text, string value)
         {
             if (text == null)
@@ -334,9 +337,10 @@ namespace Logistix.Scripts
 
         private void SyncPlayPauseButtons()
         {
-            // Not built until #20; called from _OnUpdate every frame, so this has to be a
-            // silent no-op (same contract as SetInteractable/SetText) rather than a per-frame
-            // Log.Warn -- these fields are null by design at this midpoint, not an error.
+            // pauseButton/playButton are always built on a committed window (see the #20 field
+            // block comment above); this guard only covers the brief window between
+            // AddComponent and BuildAdditiveControls running, so a silent no-op (same contract as
+            // SetInteractable/SetText) is correct here rather than a per-frame Log.Warn.
             if (pauseButton == null || playButton == null)
                 return;
 
