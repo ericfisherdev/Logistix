@@ -14,36 +14,50 @@ namespace Logistix.Scripts
     public class UIItemRequestWindow : ManualBehaviour
     {
         private bool overrideMats = true;
-        private const int colCount = 12;
-        private const int recipeRowCount = 7;
-        private const int kGridSize = 46;
-        [SerializeField] public RectTransform windowRect;
-        [SerializeField] public RectTransform itemGroup;
-        [SerializeField] public Image itemBg;
-        [SerializeField] public RawImage recipeIcons;
-        [SerializeField] public Image recipeSelImage;
-        [SerializeField] public UIButton typeButton1;
-        [SerializeField] public UIButton typeButton2;
+
+        // Read from the live UIReplicatorWindow (the donor this window is cloned from, see
+        // RequesterWindow.BuildWindow) rather than hard-coded, so hit-testing in
+        // TestMouseItemIndex/SetSelectedItemIndex stays in sync with DSP's own grid even if a
+        // future DSP update changes it.
+        private static readonly int colCount = UIReplicatorWindow.colCount;
+        private static readonly int recipeRowCount = UIReplicatorWindow.recipeRowCount;
+        private static readonly int kGridSize = UIReplicatorWindow.kGridSize;
+
+        // Harvested from the cloned UIReplicatorWindow donor by RequesterWindow.BuildWindow;
+        // always present once the window is built.
+        public RectTransform windowRect;
+        public RectTransform itemGroup;
+        public Image itemBg;
+        public RawImage recipeIcons;
+        public Image recipeSelImage;
+        public UIButton typeButton1;
+        public UIButton typeButton2;
         private UITabButton[] _otherTypeButtons;
-        [SerializeField] public UIButton minPlusButton;
-        [SerializeField] public UIButton minMinusButton;
-        [SerializeField] public UIButton maxPlusButton;
-        [SerializeField] public UIButton maxMinusButton;
-        [SerializeField] public UIButton confirmButton;
-        [SerializeField] public Text multiValueText;
-        [SerializeField] public Text multiValueMaxText;
-        [SerializeField] public bool showTips = true;
-        [SerializeField] public float showTipsDelay = 0.4f;
-        [SerializeField] public int tipAnchor = 7;
-        [SerializeField] public Image selectItemIcon;
-        [SerializeField] public Text selectedItemCurrentState;
-        [SerializeField] public Text selectedItemRequestSummary;
-        [SerializeField] public UIButton pauseButton;
-        [SerializeField] public UIButton playButton;
-        [SerializeField] public Text prefabNumText;
-        [SerializeField] public Text prefabNumRecycleText;
-        [SerializeField] public RectTransform enableFuelContainer;
-        [SerializeField] public Toggle enableFuelToggle;
+        public UIButton minPlusButton;
+        public UIButton minMinusButton;
+        public UIButton confirmButton;
+        public Text multiValueText;
+        public bool showTips = true;
+        public float showTipsDelay = 0.4f;
+        public int tipAnchor = 7;
+        public Text prefabNumText;
+        public Text prefabNumRecycleText;
+
+        // Built by the follow-up issue (#20: Recycle spinner, selected-item icon, Current/Update
+        // summary, play/pause, fuel toggle). Left null by RequesterWindow.BuildWindow until then
+        // -- every access below goes through SetInteractable/SetText or an explicit null check so
+        // the window opens and behaves correctly (OnOkButtonClick keeps the item's existing
+        // recycle max) without them.
+        public UIButton maxPlusButton;
+        public UIButton maxMinusButton;
+        public Text multiValueMaxText;
+        public Image selectItemIcon;
+        public Text selectedItemCurrentState;
+        public Text selectedItemRequestSummary;
+        public UIButton pauseButton;
+        public UIButton playButton;
+        public RectTransform enableFuelContainer;
+        public Toggle enableFuelToggle;
 
         private UIItemTip screenTip;
         private float mouseInTime;
@@ -69,6 +83,22 @@ namespace Logistix.Scripts
 
         private static readonly int buffer = Shader.PropertyToID("_StateBuffer");
         private static readonly int indexBuffer = Shader.PropertyToID("_IndexBuffer");
+
+        /// <summary>No-ops when <paramref name="button"/> hasn't been built yet (#20's scope).</summary>
+        private static void SetInteractable(UIButton button, bool interactable)
+        {
+            if (button == null)
+                return;
+            button.button.interactable = interactable;
+        }
+
+        /// <summary>No-ops when <paramref name="text"/> hasn't been built yet (#20's scope).</summary>
+        private static void SetText(Text text, string value)
+        {
+            if (text == null)
+                return;
+            text.text = value;
+        }
 
         public override void _OnCreate()
         {
@@ -130,7 +160,8 @@ namespace Logistix.Scripts
                 tabButton.Init(sprite, tab.tabName, tab.tabIndex, OnTypeButtonClick);
                 _otherTypeButtons[i] = tabButton;
             }
-            enableFuelContainer.gameObject.SetActive(false);
+            if (enableFuelContainer != null)
+                enableFuelContainer.gameObject.SetActive(false);
         }
 
         public override void _OnDestroy()
@@ -178,6 +209,9 @@ namespace Logistix.Scripts
         {
             typeButton1.onClick += OnTypeButtonClick;
             typeButton2.onClick += OnTypeButtonClick;
+            minPlusButton.onClick += OnMinPlusButtonClick;
+            minMinusButton.onClick += OnMinMinusButtonClick;
+            confirmButton.onClick += OnOkButtonClick;
             if (_otherTypeButtons != null && _otherTypeButtons.Length > 0)
             {
                 foreach (var uiTabButton in _otherTypeButtons)
@@ -191,6 +225,9 @@ namespace Logistix.Scripts
         {
             typeButton1.onClick -= OnTypeButtonClick;
             typeButton2.onClick -= OnTypeButtonClick;
+            minPlusButton.onClick -= OnMinPlusButtonClick;
+            minMinusButton.onClick -= OnMinMinusButtonClick;
+            confirmButton.onClick -= OnOkButtonClick;
             if (_otherTypeButtons != null && _otherTypeButtons.Length > 0)
             {
                 foreach (var uiTabButton in _otherTypeButtons)
@@ -203,6 +240,8 @@ namespace Logistix.Scripts
         // 0 for pause, 1 for play
         public void OnPlayPauseClick(int playOrPause)
         {
+            if (playButton == null || pauseButton == null)
+                return;
             var play = playOrPause == 1;
             if (play)
             {
@@ -286,8 +325,8 @@ namespace Logistix.Scripts
             typeButton2.button.interactable = true;
             minMinusButton.button.interactable = true;
             minPlusButton.button.interactable = true;
-            maxMinusButton.button.interactable = true;
-            maxPlusButton.button.interactable = true;
+            SetInteractable(maxMinusButton, true);
+            SetInteractable(maxPlusButton, true);
             SyncPlayPauseButtons();
 
             if (!showTips)
@@ -311,18 +350,18 @@ namespace Logistix.Scripts
                     return;
                 if (screenTip == null)
                     screenTip = UIItemTip.Create(itemId, tipAnchor,
-                        new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.transform, 0, 0, UIButton.ItemTipType.Item);
+                        new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
                 if (!screenTip.gameObject.activeSelf)
                 {
                     screenTip.gameObject.SetActive(true);
-                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.transform, 0, 0,
+                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0,
                         UIButton.ItemTipType.Item);
                 }
                 else
                 {
                     if (screenTip.showingItemId == itemId)
                         return;
-                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.transform, 0, 0, UIButton.ItemTipType.Item);
+                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
                 }
             }
             else
@@ -334,6 +373,9 @@ namespace Logistix.Scripts
                 screenTip.showingItemId = 0;
                 screenTip.gameObject.SetActive(false);
             }
+
+            if (selectedItemRequestSummary == null)
+                return;
 
             if (selectedItem == null)
             {
@@ -517,12 +559,6 @@ namespace Logistix.Scripts
             }
         }
 
-        public void OnMinPlusButtonClick(BaseEventData bed)
-        {
-            if (bed.selectedObject == minPlusButton.gameObject)
-                OnMinPlusButtonClick(1);
-        }
-
         public void OnMinPlusButtonClick(int whatever)
         {
             if (selectedItem == null)
@@ -548,7 +584,7 @@ namespace Logistix.Scripts
             if (currentRequestMax <= currentRequestMin)
             {
                 currentRequestMax = currentRequestMin;
-                multiValueMaxText.text = $"{currentRequestMax}";
+                SetText(multiValueMaxText, $"{currentRequestMax}");
             }
 
             requestAmountChanged = true;
@@ -565,18 +601,18 @@ namespace Logistix.Scripts
 
         private void UpdateSummaryText()
         {
-            selectedItemRequestSummary.text = BuildSummaryText(currentRequestMin, currentRequestMax);
+            SetText(selectedItemRequestSummary, BuildSummaryText(currentRequestMin, currentRequestMax));
         }
 
         private void UpdateCurrentText(DesiredItem desiredItem)
         {
             if (desiredItem.IsNonManaged())
             {
-                selectedItemCurrentState.text = BuildSummaryText(0, GameMain.mainPlayer.package.size, selectedItem.StackSize);
+                SetText(selectedItemCurrentState, BuildSummaryText(0, GameMain.mainPlayer.package.size, selectedItem.StackSize));
             }
             else
             {
-                selectedItemCurrentState.text = BuildSummaryText(desiredItem.RequestedStacks(), desiredItem.RecycleMaxStacks(), selectedItem.StackSize);
+                SetText(selectedItemCurrentState, BuildSummaryText(desiredItem.RequestedStacks(), desiredItem.RecycleMaxStacks(), selectedItem.StackSize));
             }
         }
 
@@ -597,12 +633,6 @@ namespace Logistix.Scripts
             }
 
             return result;
-        }
-
-        public void OnMinMinusButtonClick(BaseEventData bed)
-        {
-            if (bed.selectedObject == minMinusButton.gameObject)
-                OnMinMinusButtonClick(1);
         }
 
         public void OnMinMinusButtonClick(int whatever)
@@ -630,10 +660,10 @@ namespace Logistix.Scripts
             if (currentRequestMax >= GameMain.mainPlayer.package.size || currentRequestMax < 0)
             {
                 currentRequestMax = GameMain.mainPlayer.package.size;
-                multiValueMaxText.text = "Inf";
+                SetText(multiValueMaxText, "Inf");
             }
             else
-                multiValueMaxText.text = $"{currentRequestMax}";
+                SetText(multiValueMaxText, $"{currentRequestMax}");
 
             requestAmountChanged = true;
             UpdateSummaryText();
@@ -650,10 +680,10 @@ namespace Logistix.Scripts
             if (currentRequestMax >= GameMain.mainPlayer.package.size)
             {
                 currentRequestMax = GameMain.mainPlayer.package.size;
-                multiValueMaxText.text = "Inf";
+                SetText(multiValueMaxText, "Inf");
             }
             else
-                multiValueMaxText.text = $"{currentRequestMax}";
+                SetText(multiValueMaxText, $"{currentRequestMax}");
 
             requestAmountChanged = true;
             UpdateSummaryText();
@@ -666,6 +696,8 @@ namespace Logistix.Scripts
 
         public void OnToggleEnableFuelClick(int whatever)
         {
+            if (enableFuelToggle == null || enableFuelContainer == null)
+                return;
             Log.Debug($"Toggling fuel {enableFuelToggle.isOn}");
             if (selectedItem != null && enableFuelContainer.gameObject.activeSelf)
             {
@@ -754,12 +786,18 @@ namespace Logistix.Scripts
         {
             if (selectedItem == null)
             {
-                selectedItemRequestSummary.gameObject.SetActive(false);
-                selectedItemCurrentState.gameObject.SetActive(false);
-                selectedItemRequestSummary.transform.parent.gameObject.SetActive(false);
-                selectItemIcon.gameObject.SetActive(false);
+                if (selectedItemRequestSummary != null)
+                {
+                    selectedItemRequestSummary.gameObject.SetActive(false);
+                    selectedItemRequestSummary.transform.parent.gameObject.SetActive(false);
+                }
+                if (selectedItemCurrentState != null)
+                    selectedItemCurrentState.gameObject.SetActive(false);
+                if (selectItemIcon != null)
+                    selectItemIcon.gameObject.SetActive(false);
                 requestAmountChanged = false;
-                enableFuelContainer.gameObject.SetActive(false);
+                if (enableFuelContainer != null)
+                    enableFuelContainer.gameObject.SetActive(false);
             }
             else
             {
@@ -770,39 +808,43 @@ namespace Logistix.Scripts
                     return;
                 }
 
-                selectItemIcon.sprite = selectedItem.iconSprite;
-                selectItemIcon.gameObject.SetActive(true);
-                selectedItemRequestSummary.gameObject.SetActive(true);
+                if (selectItemIcon != null)
+                {
+                    selectItemIcon.sprite = selectedItem.iconSprite;
+                    selectItemIcon.gameObject.SetActive(true);
+                }
+                if (selectedItemRequestSummary != null)
+                    selectedItemRequestSummary.gameObject.SetActive(true);
 
-                var maxDesiredAmount = 0;
-                var minDesiredAmount = 0;
                 var desiredItem = inventoryManager.GetDesiredItem(selectedItem.ID);
 
                 currentRequestMin = desiredItem.RequestedStacks();
                 multiValueText.text = $"{currentRequestMin}";
                 currentRequestMax = desiredItem.RecycleMaxStacks();
                 currentRequestMax = Math.Min(GameMain.mainPlayer.package.size, currentRequestMax);
-                if (currentRequestMax != GameMain.mainPlayer.package.size)
-                    multiValueMaxText.text = $"{currentRequestMax}";
-                else
-                {
-                    multiValueMaxText.text = "Inf";
-                }
+                SetText(multiValueMaxText, currentRequestMax != GameMain.mainPlayer.package.size ? $"{currentRequestMax}" : "Inf");
 
                 UpdateSummaryText();
                 UpdateCurrentText(desiredItem);
-                selectedItemRequestSummary.gameObject.SetActive(false);
-                selectedItemCurrentState.gameObject.SetActive(true);
-                selectedItemRequestSummary.transform.parent.gameObject.SetActive(true);
-                requestAmountChanged = false;
-                if (selectedItem.FuelType > 0 && PluginConfig.addFuelToMecha.Value)
+                if (selectedItemRequestSummary != null)
                 {
-                    enableFuelContainer.gameObject.SetActive(true);
-                    enableFuelToggle.isOn = PluginConfig.IsItemEnabledForMechaFuelContainer(selectedItem.ID);
+                    selectedItemRequestSummary.gameObject.SetActive(false);
+                    selectedItemRequestSummary.transform.parent.gameObject.SetActive(true);
                 }
-                else
+                if (selectedItemCurrentState != null)
+                    selectedItemCurrentState.gameObject.SetActive(true);
+                requestAmountChanged = false;
+                if (enableFuelContainer != null)
                 {
-                    enableFuelContainer.gameObject.SetActive(false);
+                    if (enableFuelToggle != null && selectedItem.FuelType > 0 && PluginConfig.addFuelToMecha.Value)
+                    {
+                        enableFuelContainer.gameObject.SetActive(true);
+                        enableFuelToggle.isOn = PluginConfig.IsItemEnabledForMechaFuelContainer(selectedItem.ID);
+                    }
+                    else
+                    {
+                        enableFuelContainer.gameObject.SetActive(false);
+                    }
                 }
             }
         }

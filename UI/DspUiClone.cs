@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -46,6 +47,24 @@ namespace Logistix.UI
             clone.SetActive(false);
             clone.name = name;
             return clone;
+        }
+
+        /// <summary>
+        /// Turns off every inspector-assigned (persistent) listener on a cloned <see cref="Button"/>.
+        /// <see cref="UnityEngine.Events.UnityEventBase.RemoveAllListeners"/> only clears
+        /// listeners added at runtime via <c>AddListener</c>; persistent listeners serialized on
+        /// the donor's prefab still fire after cloning and still target the donor's original
+        /// component instance, because Unity's cloning re-points references to other objects
+        /// inside the cloned hierarchy but leaves references to external objects untouched. Left
+        /// alone, a cloned button silently drives the original DSP window instead of the mod's.
+        /// </summary>
+        public static void DisablePersistentListeners(Button button)
+        {
+            var onClick = button.onClick;
+            for (var i = 0; i < onClick.GetPersistentEventCount(); i++)
+            {
+                onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+            }
         }
     }
 }
