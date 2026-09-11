@@ -100,6 +100,19 @@ namespace Logistix.Scripts
             text.text = value;
         }
 
+        /// <summary>
+        /// Tooltip anchor offset for the grid cell at (<paramref name="col"/>, <paramref name="row"/>).
+        /// col/row are always within [0, colCount)/[0, recipeRowCount) (bounded by
+        /// TestMouseItemIndex), so col*kGridSize/row*kGridSize can never approach the range
+        /// where an int-then-cast-to-float multiplication would actually lose precision; the
+        /// multiplication is still done in float to keep that true by construction rather than
+        /// by the caller's bounds.
+        /// </summary>
+        private static Vector2 TipOffset(int col, int row)
+        {
+            return new Vector2(col * (float)kGridSize + 15f, -row * (float)kGridSize - 50f);
+        }
+
         public override void _OnCreate()
         {
             Log.Debug($"_OnCreate() {GetType()}");
@@ -350,18 +363,18 @@ namespace Logistix.Scripts
                     return;
                 if (screenTip == null)
                     screenTip = UIItemTip.Create(itemId, tipAnchor,
-                        new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
+                        TipOffset(num4, num5), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
                 if (!screenTip.gameObject.activeSelf)
                 {
                     screenTip.gameObject.SetActive(true);
-                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0,
+                    screenTip.SetTip(itemId, tipAnchor, TipOffset(num4, num5), itemBg.rectTransform, 0, 0,
                         UIButton.ItemTipType.Item);
                 }
                 else
                 {
                     if (screenTip.showingItemId == itemId)
                         return;
-                    screenTip.SetTip(itemId, tipAnchor, new Vector2(num4 * kGridSize + 15, -num5 * kGridSize - 50), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
+                    screenTip.SetTip(itemId, tipAnchor, TipOffset(num4, num5), itemBg.rectTransform, 0, 0, UIButton.ItemTipType.Item);
                 }
             }
             else
