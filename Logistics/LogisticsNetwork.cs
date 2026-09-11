@@ -5,16 +5,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.Nebula.Client;
-using PersonalLogistics.Shipping;
-using PersonalLogistics.Util;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Nebula;
+using Logistix.Nebula.Client;
+using Logistix.Shipping;
+using Logistix.Util;
 using UnityEngine;
-using static PersonalLogistics.Util.Log;
+using static Logistix.Util.Log;
 
-namespace PersonalLogistics.Logistics
+namespace Logistix.Logistics
 {
     public class StationProductInfo
     {

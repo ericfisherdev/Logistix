@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
+using Logistix.SerDe;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.ModPlayer
+namespace Logistix.ModPlayer
 {
     public static class PlayerStateContainer
     {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using PersonalLogistics.ModPlayer;
+using Logistix.ModPlayer;
 
-namespace PersonalLogistics.SerDe
+namespace Logistix.SerDe
 {
     public abstract class InstanceSerializer : IPlayerContext
     {

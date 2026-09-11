@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PersonalLogistics.UI
+namespace Logistix.UI
 {
     public class Pager<T>
     {

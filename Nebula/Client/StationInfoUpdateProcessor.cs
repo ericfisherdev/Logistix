@@ -5,10 +5,10 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Nebula.Packets;
+using Logistix.Logistics;
+using Logistix.Nebula.Packets;
 
-namespace PersonalLogistics.Nebula.Client
+namespace Logistix.Nebula.Client
 {
     [RegisterPacketProcessor]
     public class StationInfoUpdateProcessor : BasePacketProcessor<StationInfoUpdate>

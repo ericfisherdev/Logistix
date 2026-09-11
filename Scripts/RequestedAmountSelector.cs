@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     [ExecuteInEditMode]
     public class RequestedAmountSelector : MonoBehaviour

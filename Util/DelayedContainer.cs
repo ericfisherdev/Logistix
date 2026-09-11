@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PersonalLogistics.Util
+namespace Logistix.Util
 {
     public class DelayedContainer<T>
     {

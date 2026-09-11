@@ -4,10 +4,10 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using BepInEx.Configuration;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.UGUI
+namespace Logistix.UGUI
 {
     public static class ConfigWindow
     {

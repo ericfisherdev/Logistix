@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
-using static PersonalLogistics.Util.Log;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Util;
+using static Logistix.Util.Log;
 
-namespace PersonalLogistics.PlayerInventory
+namespace Logistix.PlayerInventory
 {
     public class TrashTask
     {

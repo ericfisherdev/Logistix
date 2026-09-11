@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine.Bindings;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     public enum RequestType
     {

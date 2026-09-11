@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.Util;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public class TimeScript : MonoBehaviour
     {

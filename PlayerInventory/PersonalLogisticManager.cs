@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
-using static PersonalLogistics.Util.Log;
-using static PersonalLogistics.Util.Constant;
-using static PersonalLogistics.Util.PluginConfig;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Nebula;
+using Logistix.Scripts;
+using Logistix.SerDe;
+using Logistix.Util;
+using static Logistix.Util.Log;
+using static Logistix.Util.Constant;
+using static Logistix.Util.PluginConfig;
 
-namespace PersonalLogistics.PlayerInventory
+namespace Logistix.PlayerInventory
 {
     /// <summary>Manages tasks for incoming and outgoing items </summary>
     public class PersonalLogisticManager : InstanceSerializer

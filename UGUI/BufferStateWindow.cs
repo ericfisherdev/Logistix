@@ -1,11 +1,11 @@
-﻿using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.UI;
-using PersonalLogistics.Util;
+﻿using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.UI;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.UGUI
+namespace Logistix.UGUI
 {
     public static class BufferStateWindow
     {

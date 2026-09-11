@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace PersonalLogistics.SerDe
+namespace Logistix.SerDe
 {
     public interface ISerDe
     {

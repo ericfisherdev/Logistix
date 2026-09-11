@@ -15,7 +15,7 @@ if ($reltype -eq "Debug")
 }
 $j = $manifestContent | ConvertFrom-Json
 
-$sourceFileContent = Get-Content -path .\PersonalLogisticsPlugin.cs -Raw
+$sourceFileContent = Get-Content -path .\LogistixPlugin.cs -Raw
 $sourceFileContent -match '.*PluginVersion = "(\d+.\d+.\d+)".*'
 
 $old_vernum = $Matches[1]
@@ -48,23 +48,23 @@ else
 Write-Host "next version $new_version"
 $new_version_string = "$([string]::Join(".", $new_version) )";
 
-$sourceFileContent -replace $old_vernum, $new_version_string  | Set-Content -Path .\PersonalLogisticsPlugin.cs -NoNewline
+$sourceFileContent -replace $old_vernum, $new_version_string  | Set-Content -Path .\LogistixPlugin.cs -NoNewline
 
 #Import-Module -Name ".\Invoke-MsBuild.psm1"
 
 if ($reltype -eq "Release")
 {
-#    Invoke-MsBuild -Path ".\PersonalLogistics.sln" -Params "/target:Build /property:Configuration=Release"
+#    Invoke-MsBuild -Path ".\Logistix.sln" -Params "/target:Build /property:Configuration=Release"
 #    Start-Process dotnet.exe -ArgumentList "build -c Release" -NoNewWindow -Wait
     dotnet build "/property:Configuration=Release"
-    Copy-Item -Path bin/Release/net48/PersonalLogistics.dll -Destination tmp_release
+    Copy-Item -Path bin/Release/net48/Logistix.dll -Destination tmp_release
 }
 else 
 {
-#    Invoke-MsBuild -Path ".\PersonalLogistics.sln" -Params "/target:Build /property:Configuration=Debug"
+#    Invoke-MsBuild -Path ".\Logistix.sln" -Params "/target:Build /property:Configuration=Debug"
 #    Start-Process dotnet.exe -ArgumentList "build" -NoNewWindow -Wait
-    dotnet build "/property:Configuration=Debug" 
-    Copy-Item -Path bin/Debug/net48/PersonalLogistics.dll -Destination tmp_release
+    dotnet build "/property:Configuration=Debug"
+    Copy-Item -Path bin/Debug/net48/Logistix.dll -Destination tmp_release
 }
 
 Copy-Item readme.md -Destination tmp_release\README.md
@@ -81,10 +81,10 @@ $j |ConvertTo-Json | Set-Content -Path .\tmp_release\manifest.json
 #$compress = @{
 #    Path = "tmp_release\*"
 #    CompressionLevel = "Fastest"
-#    DestinationPath = "tmp_release\PersonalLogistics.zip"
+#    DestinationPath = "tmp_release\Logistix.zip"
 #    PassThru = true
 #}
-Compress-Archive -Path ".\tmp_release\*" -CompressionLevel "Optimal" -DestinationPath "tmp_release\PersonalLogistics.zip"  
+Compress-Archive -Path ".\tmp_release\*" -CompressionLevel "Optimal" -DestinationPath "tmp_release\Logistix.zip"  
 
 if ($reltype -ne "Debug")
 {

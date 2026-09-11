@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace PersonalLogistics.Properties {
+namespace Logistix.Properties {
     using System;
     
     
@@ -28,7 +28,7 @@ namespace PersonalLogistics.Properties {
         internal static System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.Equals(null, resourceMan)) {
-                    System.Resources.ResourceManager temp = new System.Resources.ResourceManager("PersonalLogistics.Properties.Resources", typeof(Resources).Assembly);
+                    System.Resources.ResourceManager temp = new System.Resources.ResourceManager("Logistix.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -45,9 +45,9 @@ namespace PersonalLogistics.Properties {
             }
         }
         
-        internal static string PersonalLogisticsPlugin_Not_Initialized {
+        internal static string LogistixPlugin_Not_Initialized {
             get {
-                return ResourceManager.GetString("PersonalLogisticsPlugin_Not_Initialized", resourceCulture);
+                return ResourceManager.GetString("LogistixPlugin_Not_Initialized", resourceCulture);
             }
         }
     }

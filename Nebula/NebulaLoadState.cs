@@ -5,11 +5,11 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula.Client;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Nebula.Client;
+using Logistix.Util;
 
-namespace PersonalLogistics.Nebula
+namespace Logistix.Nebula
 {
     public class NebulaLoadState
     {

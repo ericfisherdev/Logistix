@@ -8,17 +8,17 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula.Packets;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Nebula.Packets;
+using Logistix.SerDe;
+using Logistix.Util;
 using UnityEngine;
-using static PersonalLogistics.Util.Log;
-using static PersonalLogistics.Util.Constant;
+using static Logistix.Util.Log;
+using static Logistix.Util.Constant;
 
-namespace PersonalLogistics.Shipping
+namespace Logistix.Shipping
 {
     public class ShippingManager : InstanceSerializer
     {

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using BepInEx.Configuration;
-using PersonalLogistics.Nebula;
-using PersonalLogistics.SerDe;
-using static PersonalLogistics.Util.Log;
+using Logistix.Nebula;
+using Logistix.SerDe;
+using static Logistix.Util.Log;
 
-namespace PersonalLogistics.Util
+namespace Logistix.Util
 {
     public enum StationSourceMode
     {

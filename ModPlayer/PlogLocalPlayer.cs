@@ -1,9 +1,9 @@
 ﻿using System;
-using PersonalLogistics.Scripts;
-using PersonalLogistics.Util;
+using Logistix.Scripts;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.ModPlayer
+namespace Logistix.ModPlayer
 {
     public class PlogLocalPlayer : PlogPlayer
     {

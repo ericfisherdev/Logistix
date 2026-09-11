@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.ModPlayer;
+using Logistix.Util;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     public class ItemLoadState
     {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using PersonalLogistics.Util;
+using Logistix.Util;
 
-namespace PersonalLogistics.ModPlayer
+namespace Logistix.ModPlayer
 {
     /// <summary>
     /// This one is for keeping track of the local player, PlayerStateContainer is to be used by the host to maintain

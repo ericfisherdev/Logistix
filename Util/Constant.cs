@@ -1,4 +1,4 @@
-﻿namespace PersonalLogistics.Util
+﻿namespace Logistix.Util
 {
     public static class Constant
     {

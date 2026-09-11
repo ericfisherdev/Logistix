@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Util;
 
-namespace PersonalLogistics.SerDe
+namespace Logistix.SerDe
 {
     public static class SerDeManager
     {

@@ -6,7 +6,7 @@ obj
 .idea
 bin/
 obj/
-PersonalLogistics.csproj.user
+Logistix.csproj.user
 *.user
 /tmp_release/README.md
 /tmp/README.md

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PersonalLogistics.Util;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Model
+namespace Logistix.Model
 {
     public enum DesiredInventoryAction
     {

@@ -1,4 +1,6 @@
-﻿PersonalLogistics
+Logistix
+
+Logistix revives [PersonalLogistics](https://github.com/mattsemar/dsp-personal-logistics) by Matt Semar for current versions of Dyson Sphere Program. PersonalLogistics is MIT licensed; the original copyright notice is retained in [LICENSE](LICENSE) alongside a new one for this fork.
 
 ### Overview
 This mod is an inventory management system backed by your logistics network. Features:
@@ -14,12 +16,12 @@ This mod is an inventory management system backed by your logistics network. Fea
 * ILS - [Interstellar Logistics Station](https://dsp-wiki.com/Interstellar_Logistics_Station) - relevant because it's capable of shipping items between planets/systems to player
 * PLS - [Planetary Logistics Station](https://dsp-wiki.com/Planetary_Logistics_Station) - only capable of supplying the player with items from the local planet
 * Mecha - [Icarus](https://dsp-wiki.com/Icarus) - relevant because it's the local source of inventory and power
-* Buffer - A subsystem of PersonalLogistics (this mod), see the [Buffer](#buffer) section for more info
+* Buffer - A subsystem of Logistix (this mod), see the [Buffer](#buffer) section for more info
 
 #### Getting started
 Open the request management window using this button
 
-![Config](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/ex2.png?raw=true)
+![Config](https://github.com/ericfisherdev/Logistix/blob/main/Examples/ex2.png?raw=true)
 
 #### Manual recycling
 Recycle items from inventory by dropping them into the Recycle window. To disable, set the `ShowRecycleWindow` config property to false. Items added here will first go the local
@@ -28,25 +30,25 @@ to come back to your inventory.
 
 Note that items that have no Logistics Stations will not be removed from Recycle area
 
-![Recycle](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/Recycle.png?raw=true)
+![Recycle](https://github.com/ericfisherdev/Logistix/blob/main/Examples/Recycle.png?raw=true)
 
 #### Requests window
 Below is an example of how you would configure the mod to always keep 5 stacks of Plane smelters in inventory and also to send extra Plane smelters to logistics stations (when you have more than 5 stacks)
 
-![Ban](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/ex3.png?raw=true)
+![Ban](https://github.com/ericfisherdev/Logistix/blob/main/Examples/ex3.png?raw=true)
 
 Example showing how to keep crude oil out of your inventory completely.
 
-![Requested](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/ex4.png?raw=true)
+![Requested](https://github.com/ericfisherdev/Logistix/blob/main/Examples/ex4.png?raw=true)
 
 Trash can be sent to logistics network also (disable using SendLitterToLogisticsNetwork config property)
 
-![Requested](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/TrashManagement.gif?raw=true)
+![Requested](https://github.com/ericfisherdev/Logistix/blob/main/Examples/TrashManagement.gif?raw=true)
 
 #### (New in 2.3.0)
 
 Numerical indicators on item icons in Requests window let you quickly see what is currently requested/banned.
-![Requested](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/Indicators.png?raw=true)
+![Requested](https://github.com/ericfisherdev/Logistix/blob/main/Examples/Indicators.png?raw=true)
 
 #### Numerical indicator FAQ
 
@@ -62,7 +64,7 @@ Q: Ok, so why does copper ore have a red '1' next to it?
 A: That item is not being auto-requested, AND anything more than 1 stack of it in your inventory it will be auto-recyled 
 
 Q. In the example above why doesn't titanium glass have a number next to it?
-A. That item is not managed by the Personal Logistics System, it's ignored
+A. That item is not managed by Logistix, it's ignored
 
 Q. All right, what about regular glass, does the blue '1' next to it mean that 1 stack of that item is kept in inventory?
  How do I know what the max allowed for that item is?
@@ -143,7 +145,7 @@ as a config property which does change unless you delete the config file
 To make it easier to understand what is happening with your requested items, an area on the left side of the screen shows the status of each requested item that
 is being delivered. This can be disabled by opening settings from the Request window and disabling `ShowIncomingItemProgress` from the config tab  
 
-![Incoming](https://github.com/mattsemar/dsp-personal-logistics/blob/main/Examples/Incoming.png?raw=true)
+![Incoming](https://github.com/ericfisherdev/Logistix/blob/main/Examples/Incoming.png?raw=true)
 
 There are a few different messages depending on where the requested items are in their journey to you.
 * `Copper ingot (7) in-transit to local buffer, ETA 25s` 
@@ -176,9 +178,17 @@ first: [link](https://bepinex.github.io/bepinex_docs/master/articles/user_guide/
 #### Manually
 
 First install the [CommonAPI](https://dsp.thunderstore.io/package/CommonAPI/CommonAPI/) mod. Next install
-the [DSPModSave](https://dsp.thunderstore.io/package/CommonAPI/DSPModSave/) mod. 
+the [DSPModSave](https://dsp.thunderstore.io/package/CommonAPI/DSPModSave/) mod.
 Next, install the [Nebula Multiplayer Mod API](https://dsp.thunderstore.io/package/nebula/NebulaMultiplayerModApi/) mod
-Then, extract the archive file and drag `PersonalLogistics.dll` and `pui` into the `BepInEx/plugins` directory.
+Then, extract the archive file and drag `Logistix.dll` and `pui` into the `BepInEx/plugins` directory.
+
+Dependencies (Thunderstore versions this release was built against):
+
+* `xiaoye97-BepInEx-5.4.17`
+* `xiaoye97-LDBTool-3.0.3`
+* `CommonAPI-CommonAPI-1.6.7`
+* `CommonAPI-DSPModSave-1.2.2`
+* `nebula-NebulaMultiplayerModApi-2.1.0`
 
 #### Mod manager
 
@@ -186,160 +196,11 @@ Click the `Install with Mod Manager` link above. Make sure dependencies are inst
 
 ## Changelog
 
-#### v2.9.8
-Update: update onTechUnlocked signature to match latest game version (0.9.26.12891)
+#### v1.0.0
+Rebrand of PersonalLogistics 2.9.8; new GUID, config and save data start fresh
 
-#### v2.9.7
-Update: add UI to disable some fuel items from being added to mecha fuel chamber to Request Window
-
-#### v2.9.6
-Bugfix: attempt to handle case where main player object becomes inactive
-Bugfix: fix error shown on host when client requests item that is not available in any reachable stations
-
-#### v2.9.5
-Bugfix: Fix icon
-
-#### v2.9.4
-Update: Add item icons to incoming item messages
-
-#### v2.9.3
-Bugfix: Fix for errors with deleted stations
-
-#### v2.9.2
-Bugfix: Attempted fix for items in PLS not being loaded
-
-#### v2.9.1
-Bugfix: Fix issue where some items were not available in network (Failed to load X from logistics stations)
-
-#### v2.9.0 
-Update: Add more packets to get Nebula working again for clients.
-Update: Lower minAge of buffered items to 20 seconds to make recycling happen faster
-
-#### v2.8.3
-Update: Allow disabling item network status tooltips (`showItemTooltips`) 
-
-#### v2.8.2
-Bugfix: Fixed issue where requested items could get stuck in the "Cost Calculation pending" state (thanks Stylisher for bug report)
-
-#### v2.8.1
-Update: Updated CommonAPI TabSystem usage to use new public methods  
-
-#### v2.8.0
-Update: Added ability to show extra tabs on request pages for mods that add extra tabs for items 
-
-#### v2.7.8
-Bugfix: Fixed issue with banned in-hand items being duplicated in buffer (thanks KrazePendragon for report) 
-
-#### v2.7.7
-Update: Added auto-cancellation for inbound requests that are stuck waiting on warpers
-Bugfix: Made escape key work like other UI Windows. Now settings menu won't be shown if Escape is hit with request window open
-
-#### v2.7.6
-Bugfix: Fixed issue where orbital collectors would be used as supply despite 'Never Use Mecha Energy' config being enabled
-
-#### v2.7.5
-Bugfix: Fixed bug with auto-refueling. Thanks to nirahiel for bug report. Big oops, very sorry
-
-#### v2.7.4
-Bugfix: Fix situation where a store task could be retried indefinitely 
-
-#### v2.7.3
-Bugfix: Another tweak to IlsDemandRules
-
-#### v2.7.2
-Bugfix: Resolved bug introduced in 2.7.1 causing shipping failures (thanks DocHogan for report)
-        Resolved bug where ILS stations can ship to player on same planet even with local demand/remote supply
-
-#### v2.7.1
-Bugfix: Fix issue with exception thrown while displaying item tooltip (thanks sparky#1253 for report)
-
-#### v2.7.0
-Feature: Added support for proliferator points on items delivered to inventory. This is still a bit of a work in progress so please let me know if you see issues.
-Bugfix: fixed incoming items area position for clients with reference height set to less than 1000 (thanks Cringely for report) 
-
-#### v2.6.4
-Bugfix: Band-aid patch for mysterious NRE on startup (thanks Issytia for report)
-
-#### v2.6.3
-Bugfix: fix UI bug with incoming items blocking interaction with world (thanks sparky#1253 for report)
-
-#### v2.6.2
-Update: Update to work with game version released 20-Jan-2022 (0.9.24.11187), make sure to update to CommonAPI 1.3+
-
-#### v2.6.1
-Bugfix: Fixed issue where warper calculation was not honoring new config property for in-system planets
-
-#### v2.6.0
-* Update: Changed incoming item message to show the actual amount being transported to buffer instead of the amount needed for request. This amount will be up to the current logistic vessel capacity and the extra items are stored in your local buffer until needed
-* Feature: Added new request mode (Planetary), see "Request Modes" section for more info (thanks zxcvbnm3057 for suggestion)
-* Bugfix: No Warpers in ILS, happens if you turn the min distance to enable warp on a station down, but leave "warpers required" checked (thanks DogHogan for report)
-* Feature: New config, "Warp Enable Min AU". Setting this above 0 lets you override the min distance to enable warp set on individual stations
-* Feature: Added stack size for items to request window
-
-#### v2.5.3
-Bugfix: Fixed issue where exception would be thrown when quitting one game and creating another (thanks Valoneu for report) 
-
-#### v2.5.2
-Bugfix: Fixed issue where 'New Text' is shown when game is started with ShowIncomingItemProgress disabled (thanks Valoneu for report) 
-
-#### v2.5.1
-Feature: Added config for minimum stacks to load from network. Open config tab of legacy UI to configure
-Feature: Added configs to disable using mecha energy & warpers for shipping costs. Use with caution, especially the warpers one. Open config tab of legacy UI to set up
-Bugfix: Fixed issue where 'Shipment delayed' messages would be shown before shipping costs were attempted the first time 
-
-#### v2.5.0
-Feature: Added support for the Nebula Multiplayer mod. This worked previously, but the item buffer and requested items would not be saved between sessions for clients 
-
-#### v2.4.0
-Feature: added messages to the incoming items area for items that are being loaded from the Buffer into the inventory, see the 'Incoming Item Notifications' section for more detail     
-
-#### v2.3.0
-Feature: added numerical indicators to Requests window icons to make it easier to tell what is requested/banned at a glance   
-
-#### v2.2.1
-Bugfix: fixed issue where item icons would not appear in the recycle area (Thanks Speedy on Discord for report)
-
-#### v2.2.1
-Bugfix: fixed a longstanding issue where the nearest station would be used to compute costs even if most of the
-items are actually coming from other, more distant stations. Now the station that supplies the most items
-in the shipment is used for computing the cost.
-(Thanks Speedy on discord for bug report)
-Tweak: adjusted incoming item text to be a little easier to read against light colored backgrounds
-
-#### v2.2.0
-Feature: added play/pause button to request window
-Refactor: overhauled state persistence to a more robust approach
-
-#### v2.1.1
-Bugfix: fixed issue with loading save where actions for items in recycle area were persisted 
-
-#### v2.1.0
-Feature: switched desired inventory state to be persisted with game save, removed support for copying state
-from another seed. Added persistence for recycle window contents
-
-#### v2.0.4
-Feature: Added popup confirmation before the first time trashed items are recycled automatically.    
-
-#### v2.0.3
-Features:
-* Added tip for +/- buttons to indicate shift/control for 5 or max 
-* Added configurable minimum delay for recycle area. Gives more time to get items back if they were accidentally added   
-
-#### v2.0.2
-Bugfix: handled destruction of logistics station while items are being removed from it
-Bugfix: fixed issue where recycled item icons were not appearing (blank white square)
-
-#### v2.0.1
-Bugfix: resolved issue where request window would not open until after inventory was first opened.
-
-#### v2.0.0
-* Overhauled UI for configuring requested items. Updated tooltips to refer to the number of stacks requested/auto-recycled instead of counts. Legacy request config window
-is left in place for now, in case of bugs. It can be accessed by clicking the Settings button in the Request Window
-
-[Pre 2.0 changes](https://github.com/mattsemar/dsp-personal-logistics/blob/main/archived.changelog.md)
+[PersonalLogistics (upstream) changelog](archived.changelog.md)
 
 ## Contact
 
-Bugs? Contact me on discord: Semar#1983 or create an issue in the github repository.
-
-Icon credit, B.E. Cimino
+Bugs? [Create an issue in the github repository](https://github.com/ericfisherdev/Logistix/issues).

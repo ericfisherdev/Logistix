@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using PersonalLogistics.Model;
-using PersonalLogistics.Util;
+using Logistix.Model;
+using Logistix.Util;
 
-namespace PersonalLogistics.PlayerInventory
+namespace Logistix.PlayerInventory
 {
     public class MechaRefueler
     {

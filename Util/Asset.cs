@@ -3,7 +3,7 @@ using System.Reflection;
 using CommonAPI.Systems;
 using UnityEngine;
 
-namespace PersonalLogistics.Util
+namespace Logistix.Util
 {
     public static class Asset
     {

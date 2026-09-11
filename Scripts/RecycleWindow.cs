@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using CommonAPI.Systems;
 using HarmonyLib;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.SerDe;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.SerDe;
+using Logistix.Util;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public class RecycleWindow : ManualBehaviour
     {

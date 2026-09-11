@@ -1,11 +1,11 @@
 ﻿using System;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Model;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Model;
+using Logistix.ModPlayer;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Scripts
+namespace Logistix.Scripts
 {
     public class TestPersistence : MonoBehaviour
     {

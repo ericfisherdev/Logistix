@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace PersonalLogistics.UI
+namespace Logistix.UI
 {
     public static class UiScaler
     {

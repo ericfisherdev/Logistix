@@ -4,11 +4,11 @@ using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
 using NebulaAPI.Packets;
-using PersonalLogistics.ModPlayer;
-using PersonalLogistics.Nebula.Packets;
-using PersonalLogistics.Util;
+using Logistix.ModPlayer;
+using Logistix.Nebula.Packets;
+using Logistix.Util;
 
-namespace PersonalLogistics.Nebula.Host
+namespace Logistix.Nebula.Host
 {
     [RegisterPacketProcessor]
     public class BufferedItemUpsertProcessor : BasePacketProcessor<BufferedItemUpsert>

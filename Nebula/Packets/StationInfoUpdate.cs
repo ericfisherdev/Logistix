@@ -1,9 +1,9 @@
 using System.IO;
-using PersonalLogistics.Logistics;
-using PersonalLogistics.Util;
+using Logistix.Logistics;
+using Logistix.Util;
 using UnityEngine;
 
-namespace PersonalLogistics.Nebula.Packets
+namespace Logistix.Nebula.Packets
 {
     public class StationInfoUpdate
     {
