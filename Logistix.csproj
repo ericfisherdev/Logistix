@@ -34,6 +34,7 @@
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
         <EmbeddedResource Remove="PLU\**" />
+        <EmbeddedResource Include="WhiteLogo_2.png" LogicalName="Logistix.WhiteLogo.png" />
     </ItemGroup>
 
     <ItemGroup>

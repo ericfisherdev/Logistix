@@ -70,7 +70,6 @@ namespace Logistix
             Strings.Init();
             PluginConfig.InitConfig(Config);
             _recycleScript = gameObject.AddComponent<RecycleWindow>();
-            Asset.Init(PluginGuid, "pui");
             PlogPlayerRegistry.ClearLocal();
             NebulaLoadState.Register();
 #if DEBUG
@@ -193,7 +192,7 @@ namespace Logistix
 
                 if (_recycleScript != null && _recycleScript.gameObject != null)
                 {
-                    _recycleScript.Unload(true);
+                    _recycleScript.Unload();
                     Destroy(_recycleScript.gameObject);
                     _recycleScript = null;
                 }
@@ -273,7 +272,7 @@ namespace Logistix
             var newButton = Pui.CopyButton(rectTransform,
                 Vector2.left * 35
                 + Vector2.down * 3,
-                Asset.LoadIconSprite(),
+                DspUiClone.LoadEmbeddedSprite("Logistix.WhiteLogo.png"),
                 v =>
                 {
                     if (!PluginConfig.useLegacyRequestWindowUI.Value)
@@ -318,7 +317,7 @@ namespace Logistix
             LogisticsNetwork.Stop();
             if (instance != null && instance._recycleScript != null)
             {
-                instance._recycleScript.Unload(false);
+                instance._recycleScript.Unload();
             }
 
             NebulaLoadState.Reset();

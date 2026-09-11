@@ -49,8 +49,20 @@ namespace Logistix.UI
                 var copiedImage = copiedIconTrans.GetComponentInChildren<Image>();
                 if (copiedImage != null)
                 {
-                    copiedImage.sprite = newIcon;
-                    copiedImage.type = Image.Type.Simple;
+                    // newIcon can be null if the embedded logo resource failed to load (see #18's
+                    // DspUiClone.LoadEmbeddedSprite); leave the donor's own icon in place rather
+                    // than silently blanking the button, which would look identical to a broken
+                    // button with no diagnostic.
+                    if (newIcon != null)
+                    {
+                        copiedImage.sprite = newIcon;
+                        copiedImage.type = Image.Type.Simple;
+                    }
+                    else
+                    {
+                        Log.Warn("No replacement icon sprite available; keeping donor button icon");
+                    }
+
                     _gameObjectsToDestroy.Add(copiedImage.gameObject);
                 }
             }

@@ -1,3 +1,5 @@
+using System.Reflection;
+using Logistix.Util;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -7,12 +9,44 @@ namespace Logistix.UI
 {
     /// <summary>
     /// Helpers for building UI elements out of DSP's own UGUI objects instead of a shipped
-    /// AssetBundle. See issue #1: the mod's Unity 2018 bundle cannot load on the 2022.3
+    /// asset bundle. See issue #1: the mod's Unity 2018 bundle cannot load on the 2022.3
     /// runtime, so windows/rows are cloned or constructed from donor objects reached through
     /// the game's live UI tree.
     /// </summary>
     public static class DspUiClone
     {
+        /// <summary>
+        /// Loads a <see cref="Sprite"/> from a PNG embedded in this assembly (see #18), replacing
+        /// the old load of the menu-button logo out of the unloadable Unity 2018 asset bundle.
+        /// Returns <c>null</c> and logs a warning if <paramref name="logicalName"/> isn't found.
+        /// </summary>
+        public static Sprite LoadEmbeddedSprite(string logicalName)
+        {
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(logicalName);
+            if (stream == null)
+            {
+                Log.Warn($"Embedded resource not found: {logicalName}");
+                return null;
+            }
+
+            var buffer = new byte[stream.Length];
+            var offset = 0;
+            int bytesRead;
+            while (offset < buffer.Length && (bytesRead = stream.Read(buffer, offset, buffer.Length - offset)) > 0)
+            {
+                offset += bytesRead;
+            }
+
+            var texture = new Texture2D(2, 2);
+            if (!ImageConversion.LoadImage(texture, buffer))
+            {
+                Log.Warn($"Failed to decode embedded resource: {logicalName}");
+                return null;
+            }
+
+            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        }
+
         /// <summary>
         /// Clones a donor <see cref="Text"/> (font/material/style come along for free) and
         /// strips any <c>Localizer</c> component the donor carries, since that component
