@@ -51,12 +51,12 @@
 
     <ItemGroup>
         <PackageReference Include="BepInEx.Core" Version="5.*" />
-        <PackageReference Include="DysonSphereProgram.GameLibs" Version="*-*" />
-        <PackageReference Include="DysonSphereProgram.Modding.CommonAPI" Version="*-*" />
-        <PackageReference Include="DysonSphereProgram.Modding.DSPModSave" Version="*-*" />
-        <PackageReference Include="DysonSphereProgram.Modding.LDBTool" Version="*-*" />
-        <PackageReference Include="DysonSphereProgram.Modding.NebulaMultiplayerModApi" Version="1.*" IncludeAssets="compile" />
-        <PackageReference Include="UnityEngine.Modules" Version="2018.4.12">
+        <PackageReference Include="DysonSphereProgram.GameLibs" Version="0.10.34.28529-r.0" />
+        <PackageReference Include="DysonSphereProgram.Modding.CommonAPI" Version="1.6.5" />
+        <PackageReference Include="DysonSphereProgram.Modding.DSPModSave" Version="1.2.0" />
+        <PackageReference Include="DysonSphereProgram.Modding.LDBTool" Version="3.0.0" />
+        <PackageReference Include="DysonSphereProgram.Modding.NebulaMultiplayerModApi" Version="2.1.0" IncludeAssets="compile" />
+        <PackageReference Include="UnityEngine.Modules" Version="2022.3.62">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="ErrorProne.NET.CoreAnalyzers" Version="0.3.0-beta.0">
