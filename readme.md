@@ -180,7 +180,7 @@ first: [link](https://bepinex.github.io/bepinex_docs/master/articles/user_guide/
 First install the [CommonAPI](https://dsp.thunderstore.io/package/CommonAPI/CommonAPI/) mod. Next install
 the [DSPModSave](https://dsp.thunderstore.io/package/CommonAPI/DSPModSave/) mod.
 Next, install the [Nebula Multiplayer Mod API](https://dsp.thunderstore.io/package/nebula/NebulaMultiplayerModApi/) mod
-Then, extract the archive file and drag `Logistix.dll` and `pui` into the `BepInEx/plugins` directory.
+Then, extract the archive file and drag `Logistix.dll` into the `BepInEx/plugins` directory.
 
 Dependencies (Thunderstore versions this release was built against):
 
