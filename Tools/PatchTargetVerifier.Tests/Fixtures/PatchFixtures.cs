@@ -74,3 +74,13 @@ internal static class NotAPatchAtAll
     {
     }
 }
+
+/// <summary>No [HarmonyPostfix] attribute at all -- HarmonyX still binds this as a
+/// postfix because the method is named "Postfix" (AttributePatch.GetPatchType).</summary>
+internal sealed class ConventionNamedPatch
+{
+    [HarmonyPatch(typeof(FakeGameType), "DoesNotExist")]
+    public static void Postfix()
+    {
+    }
+}

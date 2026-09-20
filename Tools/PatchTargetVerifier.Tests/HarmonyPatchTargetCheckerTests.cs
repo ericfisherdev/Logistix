@@ -57,6 +57,14 @@ public class HarmonyPatchTargetCheckerTests
         Assert.DoesNotContain(results, r => r.PatchSite.Contains(nameof(Fixtures.NotAPatchAtAll)));
     }
 
+    [Fact]
+    public void Recognises_a_convention_named_patch_method_with_no_role_attribute()
+    {
+        var result = SingleResultFor<Fixtures.ConventionNamedPatch>();
+
+        Assert.Equal(PatchTargetOutcome.MissingMethod, result.Outcome);
+    }
+
     private PatchTargetResult SingleResultFor<TPatch>()
     {
         var results = _checker.CheckAssembly(typeof(TPatch).Assembly);
