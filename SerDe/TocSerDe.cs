@@ -182,7 +182,7 @@ namespace Logistix.SerDe
                     startIndexAbsolute = DataSectionSize,
                     length = data.Length,
                 });
-                DataSectionSize += data.Length + 1;
+                DataSectionSize += data.Length;
             }
 
             // toc is: count, [(name, actualPos, length)]
