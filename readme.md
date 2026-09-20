@@ -204,6 +204,13 @@ produces a Thunderstore-ready `dist/Logistix-<version>.zip`. To cut a release, b
 `Logistix.csproj` first — it drives both the plugin version and the package's `manifest.json`.
 Debug builds do not produce a zip.
 
+## Verification
+
+Some behaviour only exists inside a running game and has to be checked by hand:
+
+* [Runtime smoke test](docs/smoke-test-0.10.34.md) — patches actually do the right thing in a live save.
+* [DSPModSave round-trip verification](docs/verification/save-round-trip.md) — save/load preserves Logistix state across `DSPModSave` 1.2.0.
+
 ## Changelog
 
 #### v1.0.0
