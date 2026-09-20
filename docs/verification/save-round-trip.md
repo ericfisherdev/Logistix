@@ -18,14 +18,17 @@ once, with the log attached to the issue.
 has a `Ctrl+M` probe that populates a scratch player and writes an on-disk save. This
 issue adds `Ctrl+Shift+M`, which needs no save/load cycle at all: it populates the same
 scratch state, then for every SerDe version 1 through `SerDeManager.Latest` exports it to
-a `MemoryStream`, imports that back into a fresh local player, and logs a pass/fail
-comparison of `PlogPlayer.SummarizeState()` before and after to the BepInEx log. Run this
-first — it catches format regressions (like the `ShippingManager` count bug this issue
-fixes) in one keypress, without touching disk.
+a `MemoryStream`, imports that back into a fresh local player, re-exports that player, and
+logs a pass/fail comparison of the re-exported bytes against the original export to the
+BepInEx log. Run this first — it catches format regressions (like the `ShippingManager`
+count bug this issue fixes) in one keypress, without touching disk.
 
-Expect a `PASS (expected diff, v1 has no persisted desired-inventory state)` line for
-version 1: v1 has no persisted desired-inventory section, it is reloaded from config via
-`TryLoadFromConfig()`, so a difference there is normal and is not a failure.
+Byte equality of `export(import(export(x)))` against `export(x)` is used instead of
+comparing `PlogPlayer.SummarizeState()` before and after: state that is deliberately not
+persisted (recycle-area requests in every version, desired-inventory in v1) is legitimately
+absent after import, so a summary-based comparison would report a spurious `FAIL` for
+every version that drops such state and could mask a real regression behind an expected
+diff. `SummarizeState()` is still logged alongside each result as diagnostic context.
 
 ## Setup
 
@@ -49,9 +52,8 @@ Work through these in order against acceptance criteria in issue #8. Note anythi
 deviates before checking a box, and attach the log to the issue when done.
 
 1. **In-memory round trip.** Load any save, press `Ctrl+Shift+M`. Confirm the log shows
-   a `PASS` line for versions 1-4 (version 1's expected desired-inventory diff is a
-   `PASS`, not a `FAIL`). Any `FAIL` here means a defect in `SerDe/` and blocks the rest
-   of this checklist.
+   a `PASS (N bytes stable)` line for versions 1-4. Any `FAIL` here means a defect in
+   `SerDe/` and blocks the rest of this checklist.
 2. **New game defaults.** Start a new galaxy, note the seed. Confirm `Enter New Game` in
    the log followed by Logistix state at defaults — this exercises the `GameData.NewGame`
    hook that calls `IntoOtherSave()` on every registered mod.
@@ -87,6 +89,14 @@ deviates before checking a box, and attach the log to the issue when done.
    versions". *(AC: "A round-trip for every SerDe version 1-4 passes in the in-game
    harness, with the fixtures kept in the repo".)* Reset the override to `-1` afterwards
    so normal saves aren't affected.
+
+10. **Unknown save version.** The `TEST Export override version` config can only select
+    an existing version (`SerDeManager.Export` indexes the `versions` dictionary
+    directly), so it cannot produce a save with a version tag newer than `Latest`. Save
+    normally, then hand-edit the leading version `int` of the resulting `.moddsv` to `99`
+    and load it. Confirm the log shows `unknown save version 99` and the game comes up
+    with clean defaults — including an empty recycle grid — rather than a `FAIL` or a
+    `UIMessageBox`.
 
 ## Recording the result
 

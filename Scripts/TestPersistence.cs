@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Logistix.Logistics;
 using Logistix.Model;
 using Logistix.ModPlayer;
@@ -116,15 +117,18 @@ namespace Logistix.Scripts
 
         /// <summary>
         /// In-memory round trip for every SerDe version, requiring no save/load cycle: exports
-        /// <paramref name="preTestPlayer"/>'s populated state with <see cref="SerDeManager.Export"/>
+        /// <paramref name="scratchPlayer"/>'s populated state with <see cref="SerDeManager.Export"/>
         /// for each version 1..<see cref="SerDeManager.Latest"/>, imports each export into a fresh
-        /// local player, and logs a pass/fail comparison of <see cref="PlogPlayer.SummarizeState"/>
-        /// before and after. Version 1 has no persisted desired-inventory state (it is reloaded from
-        /// config via TryLoadFromConfig), so a difference there is expected, not a failure.
+        /// local player, and logs a pass/fail comparison of the re-exported bytes against the
+        /// original export. Byte equality of export(import(export(x))) vs export(x) is used instead
+        /// of comparing <see cref="PlogPlayer.SummarizeState"/> before and after, because state that
+        /// is deliberately not persisted (recycle-area requests in every version, desired inventory
+        /// in v1) is legitimately absent post-import, which would make a summary comparison fail (or
+        /// pass) regardless of whether the SerDe round trip is actually correct.
         /// </summary>
-        private static void RunSerDeRoundTrip(PlogLocalPlayer preTestPlayer)
+        private static void RunSerDeRoundTrip(PlogLocalPlayer scratchPlayer)
         {
-            var beforeState = preTestPlayer.SummarizeState();
+            var beforeState = scratchPlayer.SummarizeState();
 
             for (var version = 1; version <= SerDeManager.Latest; version++)
             {
@@ -144,18 +148,26 @@ namespace Logistix.Scripts
                     SerDeManager.Import(reader);
 
                     var afterPlayer = PlogPlayerRegistry.LocalPlayer();
-                    var afterState = afterPlayer?.SummarizeState() ?? "<no player registered after import>";
-                    if (afterState == beforeState)
+                    if (afterPlayer == null)
                     {
-                        Log.Info($"SerDe round-trip v{version}: PASS (state unchanged)");
+                        Log.Warn($"SerDe round-trip v{version}: FAIL (no player registered after import)");
+                        continue;
                     }
-                    else if (version == 1)
+
+                    using var reexportStream = new MemoryStream();
+                    var reexportWriter = new BinaryWriter(reexportStream);
+                    SerDeManager.Export(reexportWriter, version);
+                    reexportWriter.Flush();
+
+                    var expected = memoryStream.ToArray();
+                    var actual = reexportStream.ToArray();
+                    if (expected.SequenceEqual(actual))
                     {
-                        Log.Info($"SerDe round-trip v{version}: PASS (expected diff, v1 has no persisted desired-inventory state)\r\nbefore: {beforeState}\r\nafter: {afterState}");
+                        Log.Info($"SerDe round-trip v{version}: PASS ({expected.Length} bytes stable)\r\nafter: {afterPlayer.SummarizeState()}");
                     }
                     else
                     {
-                        Log.Warn($"SerDe round-trip v{version}: FAIL\r\nbefore: {beforeState}\r\nafter: {afterState}");
+                        Log.Warn($"SerDe round-trip v{version}: FAIL (re-export differs: {expected.Length} vs {actual.Length} bytes)\r\nbefore: {beforeState}\r\nafter: {afterPlayer.SummarizeState()}");
                     }
                 }
                 catch (Exception e)
@@ -166,7 +178,7 @@ namespace Logistix.Scripts
                 {
                     // re-populate the scratch player for the next version's export, since import
                     // above replaced it in the registry with whatever that version read back
-                    PlogPlayerRegistry.RestorePretestLocalPlayer(preTestPlayer);
+                    PlogPlayerRegistry.RestorePretestLocalPlayer(scratchPlayer);
                 }
             }
         }
