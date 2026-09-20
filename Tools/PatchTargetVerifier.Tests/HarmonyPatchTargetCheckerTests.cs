@@ -65,6 +65,14 @@ public class HarmonyPatchTargetCheckerTests
         Assert.Equal(PatchTargetOutcome.MissingMethod, result.Outcome);
     }
 
+    [Fact]
+    public void Reports_missing_method_for_a_target_inherited_rather_than_declared()
+    {
+        var result = SingleResultFor<Fixtures.InheritedMemberPatch>();
+
+        Assert.Equal(PatchTargetOutcome.MissingMethod, result.Outcome);
+    }
+
     private PatchTargetResult SingleResultFor<TPatch>()
     {
         var results = _checker.CheckAssembly(typeof(TPatch).Assembly);

@@ -31,11 +31,12 @@ internal sealed class HarmonyPatchTargetChecker
         "Prefix", "Postfix", "Transpiler", "Finalizer", "ReversePatch", "ILManipulator",
     };
 
+    // Must match HarmonyX's AccessTools.allDeclared (all | DeclaredOnly), which is what
+    // AccessTools.DeclaredMethod -- and therefore PatchTools.GetOriginalMethod -- uses to
+    // resolve every MethodType.Normal patch target. Searching base types here would pass
+    // targets Harmony itself resolves to null.
     private const BindingFlags AllDeclaredMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-
-    private const BindingFlags AllMembers =
-        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 
     public IReadOnlyList<PatchTargetResult> CheckAssembly(Assembly modAssembly)
     {
@@ -129,7 +130,7 @@ internal sealed class HarmonyPatchTargetChecker
     {
         if (argumentTypes is not null)
         {
-            var method = declaringType.GetMethod(methodName, AllMembers, binder: null, argumentTypes, modifiers: null);
+            var method = declaringType.GetMethod(methodName, AllDeclaredMembers, binder: null, argumentTypes, modifiers: null);
             return method is null
                 ? new PatchTargetResult(siteName, PatchTargetOutcome.MissingMethod, $"{declaringType.FullName}.{methodName}({FormatTypeNames(argumentTypes)}) not found")
                 : new PatchTargetResult(siteName, PatchTargetOutcome.Resolved, DescribeSignature(method));
@@ -139,7 +140,7 @@ internal sealed class HarmonyPatchTargetChecker
         // overloaded, so overloads are gathered by hand to turn that into a reported
         // result instead of an unhandled exception -- exactly the case the plan calls out:
         // more than one matching overload with no argumentTypes in the attribute.
-        var candidates = declaringType.GetMethods(AllMembers).Where(m => m.Name == methodName).ToList();
+        var candidates = declaringType.GetMethods(AllDeclaredMembers).Where(m => m.Name == methodName).ToList();
         return candidates.Count switch
         {
             0 => new PatchTargetResult(siteName, PatchTargetOutcome.MissingMethod, $"{declaringType.FullName}.{methodName} not found"),
