@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Logistix.ModPlayer;
+using Logistix.Scripts;
 using Logistix.Util;
 
 namespace Logistix.SerDe
@@ -34,6 +35,7 @@ namespace Logistix.SerDe
                 Log.Warn($"(SerDe) unknown save version {version}, latest known is {Latest}. Leaving state at defaults.");
                 PlogPlayerRegistry.ClearLocal();
                 PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
+                RecycleWindow.InitOnLoad();
                 return;
             }
 
