@@ -38,6 +38,15 @@ internal sealed class HarmonyPatchTargetChecker
     private const BindingFlags AllDeclaredMembers =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
+    private readonly List<string> _skippedTypeErrors = new();
+
+    /// <summary>
+    /// The loader failure messages for every type <see cref="GetLoadableTypes"/> had to
+    /// drop from a scan. A non-empty list means the scan did not cover the whole
+    /// assembly, so a caller treating "zero failing results" as success would be wrong.
+    /// </summary>
+    public IReadOnlyList<string> SkippedTypeErrors => _skippedTypeErrors;
+
     public IReadOnlyList<PatchTargetResult> CheckAssembly(Assembly modAssembly)
     {
         var results = new List<PatchTargetResult>();
@@ -66,9 +75,10 @@ internal sealed class HarmonyPatchTargetChecker
     /// the whole assembly if even one unrelated type can't fully resolve (a NebulaAPI or
     /// xiaoye97 dependency this tool never puts on the resolver path, say). Harmony patch
     /// methods live on types that resolve fine, so the types that failed are simply
-    /// dropped rather than losing the entire scan.
+    /// dropped rather than losing the entire scan -- but the failure is recorded in
+    /// <see cref="SkippedTypeErrors"/> so a caller can tell the scan was incomplete.
     /// </summary>
-    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    private IEnumerable<Type> GetLoadableTypes(Assembly assembly)
     {
         try
         {
@@ -76,6 +86,7 @@ internal sealed class HarmonyPatchTargetChecker
         }
         catch (ReflectionTypeLoadException ex)
         {
+            _skippedTypeErrors.AddRange(ex.LoaderExceptions.Where(e => e is not null).Select(e => e!.Message));
             return ex.Types.Where(t => t is not null).Cast<Type>();
         }
     }

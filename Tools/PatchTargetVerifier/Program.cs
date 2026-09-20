@@ -37,18 +37,27 @@ internal static class Program
         context.LoadFromAssemblyName("0Harmony").GetType("HarmonyLib.HarmonyPatch", throwOnError: true);
 
         var modAssembly = context.LoadFromAssemblyPath(modDllPath);
-        var results = new HarmonyPatchTargetChecker().CheckAssembly(modAssembly);
+        var checker = new HarmonyPatchTargetChecker();
+        var results = checker.CheckAssembly(modAssembly);
 
         foreach (var result in results)
         {
             Console.WriteLine(result.ToDisplayString());
         }
 
-        if (results.Count == 0)
+        foreach (var skipped in checker.SkippedTypeErrors)
         {
-            Console.WriteLine("No [HarmonyPatch] methods found.");
+            Console.Error.WriteLine($"UNVERIFIED a type could not be loaded, its patches were not checked: {skipped}");
         }
 
-        return results.Any(r => !r.Success) ? 1 : 0;
+        // A scan that produced nothing is a broken scan, not a clean bill of health:
+        // exiting 0 here would make the CI gate green precisely when it checked nothing.
+        if (results.Count == 0)
+        {
+            Console.Error.WriteLine("No [HarmonyPatch] methods found -- the mod has patches, so the scan did not work.");
+            return 1;
+        }
+
+        return results.Any(r => !r.Success) || checker.SkippedTypeErrors.Count > 0 ? 1 : 0;
     }
 }

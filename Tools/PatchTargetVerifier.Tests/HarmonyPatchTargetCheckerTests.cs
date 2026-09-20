@@ -73,6 +73,14 @@ public class HarmonyPatchTargetCheckerTests
         Assert.Equal(PatchTargetOutcome.MissingMethod, result.Outcome);
     }
 
+    [Fact]
+    public void Records_no_skipped_type_errors_for_the_fixture_assembly()
+    {
+        _checker.CheckAssembly(typeof(Fixtures.ResolvedPatch).Assembly);
+
+        Assert.Empty(_checker.SkippedTypeErrors);
+    }
+
     private PatchTargetResult SingleResultFor<TPatch>()
     {
         var results = _checker.CheckAssembly(typeof(TPatch).Assembly);
