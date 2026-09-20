@@ -59,9 +59,13 @@
             <PackagePathsLines Include="{" />
             <PackagePathsLines Include="    internal static class PackagePaths" />
             <PackagePathsLines Include="    {" />
-            <PackagePathsLines Include="        public const string GameLibsRoot = &quot;$(PkgDysonSphereProgram_GameLibs)&quot;%3B" />
-            <PackagePathsLines Include="        public const string UnityModulesRoot = &quot;$(PkgUnityEngine_Modules)&quot;%3B" />
-            <PackagePathsLines Include="        public const string HarmonyXRoot = &quot;$(PkgHarmonyX)&quot;%3B" />
+            <!-- Verbatim (@"...") literals: on Windows these package paths expand to
+                 backslash paths, and a regular literal like "C:\Users\..." is a CS1009
+                 invalid-escape build break, while "...\temp\..." would compile into a
+                 silently wrong path instead. Keep the @ if these lines are ever touched. -->
+            <PackagePathsLines Include="        public const string GameLibsRoot = @&quot;$(PkgDysonSphereProgram_GameLibs)&quot;%3B" />
+            <PackagePathsLines Include="        public const string UnityModulesRoot = @&quot;$(PkgUnityEngine_Modules)&quot;%3B" />
+            <PackagePathsLines Include="        public const string HarmonyXRoot = @&quot;$(PkgHarmonyX)&quot;%3B" />
             <PackagePathsLines Include="    }" />
             <PackagePathsLines Include="}" />
         </ItemGroup>
