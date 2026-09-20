@@ -19,6 +19,16 @@ internal sealed class HarmonyPatchTargetChecker
         "HarmonyLib.HarmonyTranspiler",
         "HarmonyLib.HarmonyFinalizer",
         "HarmonyLib.HarmonyReversePatch",
+        "HarmonyLib.HarmonyILManipulator",
+    };
+
+    // HarmonyX treats a method as a patch when it carries a role attribute OR is simply
+    // named after the role (AttributePatch.GetPatchType in HarmonyX's PatchModels.cs:
+    // "name == methodName || harmonyAttributes.Contains($\"HarmonyLib.Harmony{name}\")").
+    // Matching only the attribute would silently skip these convention-named patches.
+    private static readonly string[] PatchRoleMethodNames =
+    {
+        "Prefix", "Postfix", "Transpiler", "Finalizer", "ReversePatch", "ILManipulator",
     };
 
     private const BindingFlags AllDeclaredMembers =
@@ -38,7 +48,7 @@ internal sealed class HarmonyPatchTargetChecker
             foreach (var method in type.GetMethods(AllDeclaredMembers))
             {
                 var methodAttributes = method.GetCustomAttributesData();
-                if (!IsPatchMethod(methodAttributes))
+                if (!IsPatchMethod(method, methodAttributes))
                 {
                     continue;
                 }
@@ -69,8 +79,9 @@ internal sealed class HarmonyPatchTargetChecker
         }
     }
 
-    private static bool IsPatchMethod(IEnumerable<CustomAttributeData> attributes) =>
-        attributes.Any(a => TryGetAttributeTypeFullName(a, out var name) && PatchRoleAttributes.Contains(name));
+    private static bool IsPatchMethod(MethodInfo method, IEnumerable<CustomAttributeData> attributes) =>
+        PatchRoleMethodNames.Contains(method.Name)
+        || attributes.Any(a => TryGetAttributeTypeFullName(a, out var name) && PatchRoleAttributes.Contains(name));
 
     private static PatchTargetResult Resolve(
         string siteName,
