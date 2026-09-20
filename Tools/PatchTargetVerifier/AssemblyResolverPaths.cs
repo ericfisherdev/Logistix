@@ -20,12 +20,17 @@ internal static class AssemblyResolverPaths
         // BepInEx.Core marks HarmonyX private (BepInEx supplies it at the game's runtime),
         // so 0Harmony.dll never lands in the mod's own output directory and has to be
         // resolved from the verifier's own package reference instead.
-        AddDirectory(paths, Path.Combine(PackagePaths.HarmonyXRoot, "lib", "netstandard2.0"));
+        //
+        // Path.Join (not Path.Combine) on purpose: the trailing segments are always
+        // relative literals here, but Path.Combine silently discards every earlier
+        // segment the moment any later one looks rooted, which CodeQL flags on every
+        // call regardless of how safe the literals are. Path.Join always concatenates.
+        AddDirectory(paths, Path.Join(PackagePaths.HarmonyXRoot, "lib", "netstandard2.0"));
 
         // Pinned copies of the game assembly and the Unity modules it depends on, in case
         // the mod's own output directory ever stops shipping them locally.
-        AddDirectory(paths, Path.Combine(PackagePaths.GameLibsRoot, "lib", "netstandard2.0"));
-        AddDirectory(paths, Path.Combine(PackagePaths.UnityModulesRoot, "lib", "netstandard2.0"));
+        AddDirectory(paths, Path.Join(PackagePaths.GameLibsRoot, "lib", "netstandard2.0"));
+        AddDirectory(paths, Path.Join(PackagePaths.UnityModulesRoot, "lib", "netstandard2.0"));
 
         // mscorlib / netstandard / System.Runtime facades for the net48-targeted mod and
         // game assemblies -- MetadataLoadContext resolves these by simple name, not by
