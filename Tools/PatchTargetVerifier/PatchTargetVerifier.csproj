@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Offline check that every [HarmonyPatch] target in the built mod DLL still exists
+        in the pinned game assembly. Resolves types and methods via reflection metadata
+        only (System.Reflection.MetadataLoadContext), no Unity or Mono runtime needed,
+        so it runs on the same ubuntu-latest CI runner as the main build.
+
+        Usage: from the repo root, run this project in Release configuration and pass the
+        built mod DLL path (e.g. bin/Release/net48/Logistix.dll) as the sole argument.
+    -->
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>Logistix.Tools.PatchTargetVerifier</RootNamespace>
+        <AssemblyName>PatchTargetVerifier</AssemblyName>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <!-- Same pin as the main project's DysonSphereProgram.GameLibs / UnityEngine.Modules
+             references (Logistix.csproj), held as one property so the two can never drift. -->
+        <GameLibsVersion>0.10.34.28529-r.0</GameLibsVersion>
+        <UnityModulesVersion>2022.3.62</UnityModulesVersion>
+
+        <!-- HarmonyLib (0Harmony.dll) is never copied into Logistix's own build output;
+             BepInEx.Core marks it private since BepInEx provides it at the game's runtime,
+             so it has to be resolved here explicitly to read the [HarmonyPatch] and
+             [HarmonyPrefix]/etc. attribute metadata. Pinned to 2.7.0, the version
+             Logistix.csproj's floating BepInEx.Core 5.* reference actually restores,
+             confirmed via Logistix's own obj/project.assets.json. -->
+        <HarmonyXVersion>2.7.0</HarmonyXVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Reflection.MetadataLoadContext" Version="9.0.0" />
+        <PackageReference Include="DysonSphereProgram.GameLibs" Version="$(GameLibsVersion)" GeneratePathProperty="true">
+            <ExcludeAssets>compile;runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="UnityEngine.Modules" Version="$(UnityModulesVersion)" GeneratePathProperty="true">
+            <ExcludeAssets>compile;runtime</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="HarmonyX" Version="$(HarmonyXVersion)" GeneratePathProperty="true">
+            <ExcludeAssets>compile;runtime</ExcludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <!-- $(PkgDysonSphereProgram_GameLibs) and friends only exist once the packages above
+         have been restored, so they cannot be read as plain MSBuild properties inside a
+         literal ItemGroup at project-parse time; they have to be captured by a target
+         that runs after restore, mirroring GenerateBuildInfo in Logistix.Thunderstore.targets. -->
+    <Target Name="GeneratePackagePaths" BeforeTargets="CoreCompile">
+        <PropertyGroup>
+            <PackagePathsFile>$(IntermediateOutputPath)PackagePaths.g.cs</PackagePathsFile>
+        </PropertyGroup>
+        <ItemGroup>
+            <PackagePathsLines Include="// &lt;auto-generated/&gt;" />
+            <PackagePathsLines Include="namespace Logistix.Tools.PatchTargetVerifier" />
+            <PackagePathsLines Include="{" />
+            <PackagePathsLines Include="    internal static class PackagePaths" />
+            <PackagePathsLines Include="    {" />
+            <PackagePathsLines Include="        public const string GameLibsRoot = &quot;$(PkgDysonSphereProgram_GameLibs)&quot;%3B" />
+            <PackagePathsLines Include="        public const string UnityModulesRoot = &quot;$(PkgUnityEngine_Modules)&quot;%3B" />
+            <PackagePathsLines Include="        public const string HarmonyXRoot = &quot;$(PkgHarmonyX)&quot;%3B" />
+            <PackagePathsLines Include="    }" />
+            <PackagePathsLines Include="}" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(PackagePathsFile)" Lines="@(PackagePathsLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <Compile Include="$(PackagePathsFile)" />
+            <FileWrites Include="$(PackagePathsFile)" />
+        </ItemGroup>
+    </Target>
+
+</Project>

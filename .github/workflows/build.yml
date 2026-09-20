@@ -34,6 +34,12 @@ jobs:
       - name: Build and package
         run: dotnet build Logistix.csproj --configuration Release --no-restore
 
+      - name: Verify Harmony patch targets
+        run: dotnet run --project Tools/PatchTargetVerifier/PatchTargetVerifier.csproj -c Release -- bin/Release/net48/Logistix.dll
+
+      - name: Test PatchTargetVerifier
+        run: dotnet test Tools/PatchTargetVerifier.Tests/PatchTargetVerifier.Tests.csproj -c Release
+
       - name: Upload Thunderstore package
         uses: actions/upload-artifact@v7
         with:

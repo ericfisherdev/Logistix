@@ -1,0 +1,76 @@
+using HarmonyLib;
+
+namespace Logistix.Tools.PatchTargetVerifier.Tests.Fixtures;
+
+/// <summary>Stand-in for a "game" type the fixture patches below target. Never patched
+/// or executed -- HarmonyPatchTargetChecker only reads metadata about it.</summary>
+internal static class FakeGameType
+{
+    public static void Foo()
+    {
+    }
+
+    public static void Bar(int x)
+    {
+    }
+
+    public static void Bar(string x)
+    {
+    }
+}
+
+internal sealed class ResolvedPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeGameType), nameof(FakeGameType.Foo))]
+    public static void Prefix()
+    {
+    }
+}
+
+internal sealed class MissingMethodPatch
+{
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(FakeGameType), "DoesNotExist")]
+    public static void Postfix()
+    {
+    }
+}
+
+internal sealed class AmbiguousOverloadPatch
+{
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(FakeGameType), nameof(FakeGameType.Bar))]
+    public static void Postfix()
+    {
+    }
+}
+
+internal sealed class ResolvedWithArgumentTypesPatch
+{
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(FakeGameType), nameof(FakeGameType.Bar), new[] { typeof(int) })]
+    public static void Postfix()
+    {
+    }
+}
+
+/// <summary>Class-level [HarmonyPatch(Type)] supplies the declaring type; the
+/// method-level [HarmonyPatch(string)] supplies the method name -- the same combination
+/// the Harmony docs show for spreading several patch methods across one target type.</summary>
+[HarmonyPatch(typeof(FakeGameType))]
+internal sealed class ClassLevelMergePatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(nameof(FakeGameType.Foo))]
+    public static void Prefix()
+    {
+    }
+}
+
+internal static class NotAPatchAtAll
+{
+    public static void Method()
+    {
+    }
+}
