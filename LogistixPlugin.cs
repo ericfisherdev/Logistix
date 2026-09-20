@@ -257,6 +257,7 @@ namespace Logistix
 
         public void IntoOtherSave()
         {
+            PlogPlayerRegistry.ClearLocal();
             PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
             RecycleWindow.InitOnLoad();
         }
