@@ -52,7 +52,11 @@ namespace Logistix.Shipping
             var costTuples = new List<(Guid guid, Cost cost)>();
             foreach (var cost in _costs)
             {
-                var itemRequest = itemRequests.Find(ir => ir.guid == cost.Key);
+                // Must match exportableRequests, not itemRequests: a cost whose request was
+                // filtered out as recycle-area would otherwise be written with no request to
+                // attach to on import, and would then vanish on the next export -- ExportData
+                // would not be idempotent under re-export.
+                var itemRequest = exportableRequests.Find(ir => ir.guid == cost.Key);
                 if (itemRequest == null)
                 {
                     continue;
