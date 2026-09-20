@@ -42,11 +42,10 @@ namespace Logistix.Shipping
             Debug($"wrote {_itemBuffer.Count} buffered items");
             var itemRequests = new List<ItemRequest>(_requests)
                 .FindAll(ir => ir.State != RequestState.Complete && ir.State != RequestState.Failed);
-            w.Write(itemRequests.Count);
-            foreach (var t in itemRequests)
+            var exportableRequests = itemRequests.FindAll(ir => !ir.FromRecycleArea);
+            w.Write(exportableRequests.Count);
+            foreach (var t in exportableRequests)
             {
-                if (t.FromRecycleArea)
-                    continue;
                 t.Export(w);
             }
 
