@@ -35,15 +35,14 @@ namespace Logistix
     [BepInDependency(DSPModSavePlugin.MODGUID)]
     [BepInDependency(NebulaModAPI.API_GUID)]
     [BepInDependency(LDBToolPlugin.MODGUID)]
-    [BepInDependency(DSPModSavePlugin.MODGUID)]
     [CommonAPISubmoduleDependency(nameof(ProtoRegistry), nameof(CustomKeyBindSystem), nameof(TabSystem))]
+    [ModSaveSettings(LoadOrder = LoadOrder.Postload)]
     public class LogistixPlugin : BaseUnityPlugin, IModCanSave, IMultiplayerMod
     {
         private const string PluginGuid = "ericfisherdev.dysonsphereprogram.Logistix";
         private const string PluginName = "Logistix";
         private const string PluginVersion = BuildInfo.Version;
         private const float InventorySyncInterval = 4.5f;
-        private static readonly int VERSION = 2;
 
         private static LogistixPlugin instance;
         private readonly List<GameObject> _objectsToDestroy = new();
