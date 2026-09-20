@@ -16,6 +16,12 @@ namespace Logistix.SerDe
             skipWritingVersion = true;
         }
 
+        /// <summary>No-op: a remote player's sections are supplied by the ctor, and clearing the
+        /// local player here would destroy it mid-import of the enclosing local save.</summary>
+        protected override void PrepareForImport()
+        {
+        }
+
         public override List<InstanceSerializer> GetSections()
         {
             var result = new List<InstanceSerializer>

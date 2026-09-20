@@ -13,10 +13,21 @@ namespace Logistix.SerDe
 
         public abstract List<InstanceSerializer> GetSections();
 
-        public void Import(BinaryReader r)
+        /// <summary>
+        /// Re-register a fresh local player before a local save import so no state carries over
+        /// from the previous slot. Overridden to a no-op by <see cref="SerDeRemoteUserState"/>,
+        /// which deserialises a remote player (including re-entrantly, from the PSC section of a
+        /// local import) and must never touch the local registry.
+        /// </summary>
+        protected virtual void PrepareForImport()
         {
             PlogPlayerRegistry.ClearLocal();
             PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
+        }
+
+        public void Import(BinaryReader r)
+        {
+            PrepareForImport();
             // Build the section list once and reuse it for the whole import: GetSections() constructs
             // fresh instances (e.g. RecycleWindowPersistence) on each call, so re-invoking it per
             // section would import into throwaway objects nobody keeps a reference to.
