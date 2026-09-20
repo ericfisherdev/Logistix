@@ -68,7 +68,7 @@ namespace Logistix.Shipping
                 costTuple.cost.Export(w);
             }
 
-            Debug($"Wrote {itemRequests.Count} requests and {costTuples.Count} costs for shipping manager");
+            Debug($"Wrote {exportableRequests.Count} requests (of {itemRequests.Count} active, {itemRequests.Count - exportableRequests.Count} skipped as recycle-area) and {costTuples.Count} costs for shipping manager");
         }
 
         public override void ImportData(BinaryReader reader)
