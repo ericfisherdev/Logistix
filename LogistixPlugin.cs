@@ -66,6 +66,7 @@ namespace Logistix
             _harmony.PatchAll(typeof(RequestWindow));
             _harmony.PatchAll(typeof(RecycleWindow));
             _harmony.PatchAll(typeof(RequesterWindow));
+            HarmonyPatchReport.LogBoundTargets(_harmony);
             RegisterKeyBinds();
             Strings.Init();
             PluginConfig.InitConfig(Config);
