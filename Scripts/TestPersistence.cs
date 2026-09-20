@@ -47,18 +47,26 @@ namespace Logistix.Scripts
         private static void RunWithScratchPlayer(Action<PlogLocalPlayer> test)
         {
             var preTestPlayerId = PluginConfig.multiplayerUserId.Value;
+            var realLocalPlayer = PlogPlayerRegistry.LocalPlayer();
             PlogPlayerRegistry.ClearLocal();
             PluginConfig.multiplayerUserId.Value = Guid.NewGuid().ToString();
-            var preTestPlayer = (PlogLocalPlayer)PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
+            var scratchPlayer = (PlogLocalPlayer)PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
             try
             {
-                PopulateTestState(preTestPlayer);
-                test(preTestPlayer);
+                PopulateTestState(scratchPlayer);
+                test(scratchPlayer);
             }
             finally
             {
-                PlogPlayerRegistry.RestorePretestLocalPlayer(preTestPlayer);
                 PluginConfig.multiplayerUserId.Value = preTestPlayerId;
+                PlogPlayerRegistry.ClearLocal();
+                if (realLocalPlayer != null)
+                {
+                    PlogPlayerRegistry.RestorePretestLocalPlayer(realLocalPlayer);
+                }
+                // PopulateTestState pushes scratch grid items into the static
+                // RecycleWindow._gridItems via AddItemForTest; nothing else removes them.
+                RecycleWindow.InitOnLoad();
             }
         }
 
