@@ -18,11 +18,26 @@ namespace Logistix.SerDe
 
         public static readonly int Latest = versions.Keys.Max();
 
+        /// <summary>
+        /// Never throws. A save written by a version of Logistix newer than this build
+        /// (unknown <paramref name="version"/> tag) is logged and treated as "no mod data": the
+        /// local player is (re)registered fresh, which leaves every section at its default,
+        /// constructed state instead of raising an exception into DSPModSave's import handler,
+        /// which would otherwise pop a blocking <c>UIMessageBox</c> in front of the player.
+        /// </summary>
         public static void Import(BinaryReader r)
         {
             var version = r.ReadInt32();
             Log.Debug($"(SerDe) importing version {version}");
-            versions[version].Import(r);
+            if (!versions.TryGetValue(version, out var serDe))
+            {
+                Log.Warn($"(SerDe) unknown save version {version}, latest known is {Latest}. Leaving state at defaults.");
+                PlogPlayerRegistry.ClearLocal();
+                PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
+                return;
+            }
+
+            serDe.Import(r);
         }
 
         public static void Export(BinaryWriter w)
