@@ -19,6 +19,20 @@ internal static class FakeGameType
     }
 }
 
+/// <summary>A base type whose member is never overridden by <see cref="FakeDerivedGameType"/>,
+/// standing in for a member a game update moved up to a base class -- the shape
+/// HarmonyX's declared-only target resolution refuses to reach through.</summary>
+internal class FakeGameBaseType
+{
+    public void InheritedOnly()
+    {
+    }
+}
+
+internal sealed class FakeDerivedGameType : FakeGameBaseType
+{
+}
+
 internal sealed class ResolvedPatch
 {
     [HarmonyPrefix]
@@ -81,6 +95,17 @@ internal sealed class ConventionNamedPatch
 {
     [HarmonyPatch(typeof(FakeGameType), "DoesNotExist")]
     public static void Postfix()
+    {
+    }
+}
+
+/// <summary>Targets a member <see cref="FakeDerivedGameType"/> inherits rather than
+/// declares -- Harmony's declared-only lookup resolves this to null at patch time.</summary>
+internal sealed class InheritedMemberPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeDerivedGameType), nameof(FakeGameBaseType.InheritedOnly))]
+    public static void Prefix()
     {
     }
 }
