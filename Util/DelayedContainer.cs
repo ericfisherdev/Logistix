@@ -72,6 +72,12 @@ namespace Logistix.Util
             return _addedAt.ContainsKey(item);
         }
 
+        public void Clear()
+        {
+            _items.Clear();
+            _addedAt.Clear();
+        }
+
         public int MinAgeSeconds() => (int)_minAge.TotalSeconds;
 
         public void UpdateMinAgeSeconds(int seconds)
