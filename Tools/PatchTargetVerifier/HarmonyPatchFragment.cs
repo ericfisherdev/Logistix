@@ -14,4 +14,10 @@ internal sealed class HarmonyPatchFragment
     public string? MethodName { get; set; }
 
     public Type[]? ArgumentTypes { get; set; }
+
+    /// <summary>The underlying integral value of a HarmonyLib.MethodType constructor argument, if given.</summary>
+    public int? MethodType { get; set; }
+
+    /// <summary>The declaring type given by string name (e.g. [HarmonyPatch("Namespace.Foo", ...)]) when no <see cref="DeclaringType"/> was given via typeof(...).</summary>
+    public string? TypeName { get; set; }
 }

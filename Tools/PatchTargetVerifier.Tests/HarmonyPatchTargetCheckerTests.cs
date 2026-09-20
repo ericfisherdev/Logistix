@@ -81,6 +81,50 @@ public class HarmonyPatchTargetCheckerTests
         Assert.Empty(_checker.SkippedTypeErrors);
     }
 
+    [Fact]
+    public void Resolves_a_constructor_patch()
+    {
+        var result = SingleResultFor<Fixtures.InstanceConstructorPatch>();
+
+        Assert.Equal(PatchTargetOutcome.Resolved, result.Outcome);
+        Assert.Contains(".ctor(Int32)", result.Detail);
+    }
+
+    [Fact]
+    public void Resolves_a_static_constructor_patch()
+    {
+        var result = SingleResultFor<Fixtures.StaticConstructorPatch>();
+
+        Assert.Equal(PatchTargetOutcome.Resolved, result.Outcome);
+    }
+
+    [Fact]
+    public void Resolves_a_property_getter_patch()
+    {
+        var result = SingleResultFor<Fixtures.PropertyGetterPatch>();
+
+        Assert.Equal(PatchTargetOutcome.Resolved, result.Outcome);
+        Assert.Contains("get_Value", result.Detail);
+    }
+
+    [Fact]
+    public void Resolves_a_property_setter_patch()
+    {
+        var result = SingleResultFor<Fixtures.PropertySetterPatch>();
+
+        Assert.Equal(PatchTargetOutcome.Resolved, result.Outcome);
+        Assert.Contains("set_Value", result.Detail);
+    }
+
+    [Fact]
+    public void Reports_a_string_typed_declaring_type_as_unsupported_rather_than_missing()
+    {
+        var result = SingleResultFor<Fixtures.TypeNamePatch>();
+
+        Assert.Equal(PatchTargetOutcome.Unsupported, result.Outcome);
+        Assert.True(result.Success);
+    }
+
     private PatchTargetResult SingleResultFor<TPatch>()
     {
         var results = _checker.CheckAssembly(typeof(TPatch).Assembly);

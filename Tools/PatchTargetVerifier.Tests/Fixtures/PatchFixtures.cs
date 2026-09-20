@@ -33,6 +33,19 @@ internal sealed class FakeDerivedGameType : FakeGameBaseType
 {
 }
 
+internal sealed class FakeGameTypeWithMembers
+{
+    public FakeGameTypeWithMembers(int x)
+    {
+    }
+
+    static FakeGameTypeWithMembers()
+    {
+    }
+
+    public int Value { get; set; }
+}
+
 internal sealed class ResolvedPatch
 {
     [HarmonyPrefix]
@@ -105,6 +118,54 @@ internal sealed class InheritedMemberPatch
 {
     [HarmonyPrefix]
     [HarmonyPatch(typeof(FakeDerivedGameType), nameof(FakeGameBaseType.InheritedOnly))]
+    public static void Prefix()
+    {
+    }
+}
+
+internal sealed class InstanceConstructorPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeGameTypeWithMembers), MethodType.Constructor, new[] { typeof(int) })]
+    public static void Prefix()
+    {
+    }
+}
+
+internal sealed class StaticConstructorPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeGameTypeWithMembers), MethodType.StaticConstructor)]
+    public static void Prefix()
+    {
+    }
+}
+
+internal sealed class PropertyGetterPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeGameTypeWithMembers), nameof(FakeGameTypeWithMembers.Value), MethodType.Getter)]
+    public static void Prefix()
+    {
+    }
+}
+
+internal sealed class PropertySetterPatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(FakeGameTypeWithMembers), nameof(FakeGameTypeWithMembers.Value), MethodType.Setter)]
+    public static void Prefix()
+    {
+    }
+}
+
+/// <summary>[HarmonyPatch(string typeName, string methodName)] resolves its declaring
+/// type by searching every loaded assembly (HarmonyX's AccessTools.TypeByName) -- a
+/// lookup this offline checker deliberately does not attempt.</summary>
+internal sealed class TypeNamePatch
+{
+    [HarmonyPrefix]
+    [HarmonyPatch("Logistix.Tools.PatchTargetVerifier.Tests.Fixtures.FakeGameType", "Foo")]
     public static void Prefix()
     {
     }
