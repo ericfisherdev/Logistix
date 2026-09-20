@@ -53,7 +53,10 @@ deviates before checking a box, and attach the log to the issue when done.
 
 1. **In-memory round trip.** Load any save, press `Ctrl+Shift+M`. Confirm the log shows
    a `PASS (N bytes stable)` line for versions 1-4. Any `FAIL` here means a defect in
-   `SerDe/` and blocks the rest of this checklist.
+   `SerDe/` and blocks the rest of this checklist. The harness clears `RecycleWindow`'s
+   staged and grid items after each version's import (`RecycleWindow.InitOnLoad()`), so
+   running it against a save with a populated recycle grid no longer leaves duplicate
+   staged items behind.
 2. **New game defaults.** Start a new galaxy, note the seed. Confirm `Enter New Game` in
    the log followed by Logistix state at defaults — this exercises the `GameData.NewGame`
    hook that calls `IntoOtherSave()` on every registered mod.

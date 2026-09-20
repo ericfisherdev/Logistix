@@ -538,13 +538,19 @@ namespace Logistix.Scripts
 
         public static void InitOnLoad()
         {
-            // nothing to do
             _gridItems.Clear();
+            // Also drop anything staged but not yet drained by PopAvailableItem(), otherwise
+            // repeated imports in one session (e.g. the Ctrl+Shift+M round-trip harness, or
+            // switching save slots) accumulate duplicate items instead of reflecting the newly
+            // loaded save's recycle grid.
+            _instance?._recycledItems.Clear();
         }
 
         public static void Import(BinaryReader r)
         {
-            _gridItems.Clear();
+            // Clears both _gridItems and any not-yet-drained _recycledItems: an import replaces
+            // the recycle grid wholesale, it does not add to whatever a previous import staged.
+            InitOnLoad();
             try
             {
                 var gridItemCount = r.ReadInt32();
