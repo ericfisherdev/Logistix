@@ -15,8 +15,12 @@ namespace Logistix.SerDe
 
         public void Import(BinaryReader r)
         {
-            // PlogPlayerRegistry.ClearLocal();
+            PlogPlayerRegistry.ClearLocal();
             PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
+            // Build the section list once and reuse it for the whole import: GetSections() constructs
+            // fresh instances (e.g. RecycleWindowPersistence) on each call, so re-invoking it per
+            // section would import into throwaway objects nobody keeps a reference to.
+            var sections = GetSections();
             var tableOfContents = TableOfContents.Import(r);
             try
             {
@@ -26,7 +30,7 @@ namespace Logistix.SerDe
                     InstanceSerializer instance = null;
                     try
                     {
-                        Type type = GetTypeFromSectionName(contentsItem.sectionName);
+                        Type type = GetTypeFromSectionName(sections, contentsItem.sectionName);
                         Log.Debug($"starting to read {type} at {contentsItem.startIndexAbsolute}, {contentsItem.length}");
                         using var memoryStream = new MemoryStream(r.ReadBytes(contentsItem.length));
                         using var sectionReader = new BinaryReader(memoryStream);
@@ -38,8 +42,7 @@ namespace Logistix.SerDe
                                 throw new InvalidDataException($"section name was: '{section}', expected {contentsItem.sectionName}");
                             }
 
-                            // GetImportActions()[type](sectionReader);
-                            instance = GetInstanceFromType(type);
+                            instance = GetInstanceFromType(sections, type);
                             instance.ImportData(sectionReader);
                             Log.Debug($"successful read in section: {type} {instance.SummarizeState()}");
                         }
@@ -62,9 +65,9 @@ namespace Logistix.SerDe
             }
         }
 
-        private Type GetTypeFromSectionName(string sectionName)
+        private static Type GetTypeFromSectionName(List<InstanceSerializer> sections, string sectionName)
         {
-            var results = GetSections().FindAll(s => s.GetExportSectionId() == sectionName);
+            var results = sections.FindAll(s => s.GetExportSectionId() == sectionName);
             if (results.Count == 0 || results.Count > 1)
             {
                 throw new InvalidDataException($"Expected only 1 type with section name: {sectionName} found {results.Count}");
@@ -73,9 +76,9 @@ namespace Logistix.SerDe
             return results[0].GetType();
         }
 
-        private InstanceSerializer GetInstanceFromType(Type type)
+        private static InstanceSerializer GetInstanceFromType(List<InstanceSerializer> sections, Type type)
         {
-            var results = GetSections().FindAll(s => type == s.GetType());
+            var results = sections.FindAll(s => type == s.GetType());
             if (results.Count is 0 or > 1)
             {
                 throw new InvalidDataException($"Expected only 1 instance in list with type: {type} found {results.Count}");
