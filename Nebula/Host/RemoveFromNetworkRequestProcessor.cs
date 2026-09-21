@@ -25,6 +25,7 @@ namespace Logistix.Nebula.Host
                 if (stationInfo == null || removed.ItemCount == 0)
                 {
                     Log.Warn($"Did not find station to remove items from for player. ItemId: {packet.itemId} {removed.ItemCount}");
+                    NebulaDiagnostics.RecordSend(nameof(RemoveFromNetworkResponse));
                     conn.SendPacket(new RemoveFromNetworkResponse(
                         packet.clientId,
                         0,
@@ -45,6 +46,7 @@ namespace Logistix.Nebula.Host
                 {
                     warperNeeded = false;
                 }
+                NebulaDiagnostics.RecordSend(nameof(RemoveFromNetworkResponse));
                 conn.SendPacket(new RemoveFromNetworkResponse(
                     packet.clientId,
                     stationInfo.StationGid,

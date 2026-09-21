@@ -29,6 +29,7 @@ namespace Logistix.Nebula.Host
                     // don't be too chatty, just let them assume (correctly) that he item was added
                     return;
                 }
+                NebulaDiagnostics.RecordSend(nameof(AddToNetworkResponse));
                 conn.SendPacket(new AddToNetworkResponse(
                     packet.clientId,
                     packet.itemId,

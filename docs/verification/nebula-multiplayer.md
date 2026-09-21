@@ -9,17 +9,25 @@ issue can only come from a person running two game instances.
 ## What this issue lands (agent-verifiable)
 
 - `Nebula/NebulaDiagnostics.cs`: a debug-only packet trace, gated behind
-  `PluginConfig.logNebulaPacketTraffic` (Debug section, off by default). Counts sends,
-  receives and handler failures per packet type, and on each packet type's first receive
-  logs whether the `BasePacketProcessor<T>.IsHost` field agrees with the live
-  `NebulaLoadState.IsMultiplayerHost()` session check. `Ctrl+B` (alongside the existing
-  `TestPersistence` `Ctrl+N`/`Ctrl+M` probes, Debug builds only) dumps the summary to the
-  log.
+  `PluginConfig.logNebulaPacketTraffic` (bound only in Debug builds, off by default, so a
+  Release player can't enable a trace whose only readout — the `Ctrl+B` dump below — is
+  compiled out). Counts sends, receives and handler failures per packet type, and on
+  every receive re-checks whether the `BasePacketProcessor<T>.IsHost` field agrees with
+  the live `NebulaLoadState.IsMultiplayerHost()` session check, logging on the first
+  observation or on any change. The check is re-evaluated per receive rather than latched
+  once per process, because the stale-role failure this harness targets only shows up on
+  a *second* session in the same process (leave/rejoin, or the host restarting into a
+  joined-as-client session) — a once-per-process latch would never re-compare after
+  session one. `RecordSend` is called from every send site: the 6 in `RequestClient`, the
+  1 in `ShippingManager.AddRemoteRequest`, and all 5 host-side `conn.SendPacket` replies
+  across `ClientStateRequestProcessor`, `AddToNetworkRequestProcessor` and
+  `RemoveFromNetworkRequestProcessor`. `Ctrl+B` (alongside the existing `TestPersistence`
+  `Ctrl+N`/`Ctrl+M` probes, Debug builds only) dumps the summary to the log.
 - `NebulaLoadState.Register()` now reflects the executing assembly after
   `NebulaModAPI.RegisterPackets()` and logs the count of types carrying
   `[RegisterPacketProcessor]`, expecting eleven. A silent drop in that count is how a
   reflection-registration regression would present itself.
-- Three defects found by static reading, fixed without needing a live session to
+- Four defects found by static reading, fixed without needing a live session to
   reproduce:
   - `SerDeRemoteUserState.GetSections()` no longer constructs a throwaway
     `RecycleWindowPersistence` for a remote player. `RecycleWindowPersistence.ImportData`
@@ -34,6 +42,13 @@ issue can only come from a person running two game instances.
     twice) no longer throws inside the `GameMain.End` Harmony postfix.
   - `LogistixPlugin.Update()` called `NebulaLoadState.instance.RequestStateFromHost()`
     with no null guard; changed to `?.`.
+  - `ClientStateProcessor.ProcessPacket()` called
+    `NebulaLoadState.instance.SetClientStateLoaded()` with no null guard — reachable if the
+    session ends (`GameMain.End` → `NebulaLoadState.Reset()` nulls `instance`) between a
+    client's `ClientStateRequest` and the host's reply landing. A bare `?.` would be wrong
+    here (it would silently skip `SetClientStateLoaded()`, leaving a live client paused
+    forever via `PluginConfig.IsPaused()` → `IsWaitingClient()`), so this one guards
+    explicitly and logs instead of unpausing nothing.
   - `ClientStateRequestProcessor` replied to a client's state request by broadcasting
     (`NebulaModAPI.MultiplayerSession.Network.SendPacket`) instead of unicasting
     (`conn.SendPacket`), sending one client's full serialised mod state to every connected
@@ -44,9 +59,9 @@ issue can only come from a person running two game instances.
   session exists — but the API assembly only ships the interface surface, not Nebula's
   own implementation, so whether `Initialize` is called once at registration or again per
   session can't be determined by reading code on this machine. That's exactly what the
-  first-receive role-mismatch log in `NebulaDiagnostics` exists to catch; the manual
-  session below is the only way to resolve it. If the session logs a mismatch, file it as
-  a bug rather than guessing at a fix here.
+  role-check log in `NebulaDiagnostics` exists to catch; the manual session below is the
+  only way to resolve it. If the session logs a mismatch, file it as a bug rather than
+  guessing at a fix here.
 
 Confirmed via `dotnet build Logistix.csproj -c Release`, the `Tools/PatchTargetVerifier`
 Harmony-patch check, and `Tools/PatchTargetVerifier.Tests` — all green. None of that
@@ -99,9 +114,11 @@ deviates before checking a box.
    matches the first. Host `ClientStateRequestProcessor` should reply
    `RegenerateUserIdRequest` and the client should mint a new id and re-request state.
 8. **Client leaves and rejoins mid-session; then host ends and restarts the game.**
-   Targets the `NebulaLoadState.Reset()`/`instance` null-guard fixes above — confirm
-   neither path throws in the log. *(AC: "Joining mid-session syncs existing mod
-   state".)*
+   Targets the `NebulaLoadState.Reset()`/`instance` null-guard fixes above (including
+   `ClientStateProcessor`'s guard against a reply landing after the session already ended)
+   — confirm no path throws in the log, and that this second session's `Ctrl+B` role-check
+   lines are re-evaluated rather than showing session one's values. *(AC: "Joining
+   mid-session syncs existing mod state".)*
 9. **Dedicated server, if available.** `IMultiplayerSession.IsDedicated` exists in 2.1.0
    and `LocalPlayer` may behave differently there. If a dedicated server cannot be stood
    up, say so on the issue rather than silently skipping.
@@ -111,11 +128,11 @@ deviates before checking a box.
       that never receives after being sent is a lost-packet symptom).
     - `failures = 0` for every packet type across the whole session. *(AC: "No packet
       handler throws across a full session".)*
-    - The first-receive role line for every packet type shows the `IsHost` field agreeing
-      with the live `IsMultiplayerHost()` check on both host and client. Any `MISMATCH`
-      line is the stale-role risk materialising — file it as a bug referencing this issue
-      rather than trying to fix it here. *(AC: "`BasePacketProcessor.IsHost` is confirmed
-      to match the live session role, or the mismatch is filed as a bug".)*
+    - The role-check line for every packet type shows the `IsHost` field agreeing with the
+      live `IsMultiplayerHost()` check on both host and client. Any `MISMATCH` line is the
+      stale-role risk materialising — file it as a bug referencing this issue rather than
+      trying to fix it here. *(AC: "`BasePacketProcessor.IsHost` is confirmed to match the
+      live session role, or the mismatch is filed as a bug".)*
     - The startup log on both instances shows `registered 11 packet processors as
       expected`, not a mismatch warning. *(AC: "Registration check confirms all eleven
       `[RegisterPacketProcessor]` types bind under 2.1.0".)*
