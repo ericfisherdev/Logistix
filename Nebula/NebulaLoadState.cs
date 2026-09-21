@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
@@ -49,6 +49,8 @@ namespace Logistix.Nebula
 
         public static void Reset()
         {
+            if (instance == null)
+                return;
             instance._clientStateRequested = false;
             instance._clientStateLoadedFromServer = false;
             instance = null;
