@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
@@ -18,18 +19,27 @@ namespace Logistix.Nebula.Host
         /// </summary>
         public override void ProcessPacket(BufferedItemUpsert packet, INebulaConnection conn)
         {
-            if (IsClient)
-                return;
-            var remotePlayerId = PlogPlayerId.FromString(packet.playerId);
-            var plogPlayer = PlayerStateContainer.GetPlayer(remotePlayerId, true);
-            if (plogPlayer is PlogRemotePlayer remotePlayer)
+            NebulaDiagnostics.RecordReceive(nameof(BufferedItemUpsert), IsHost, IsClient);
+            try
             {
-                Log.Debug($"Processing buffer upsert on behalf of client {remotePlayerId}. Item: {packet.itemId} newCount: {packet.itemCount}");
-                remotePlayer.shippingManager.UpsertBufferedItem(packet.itemId, packet.itemCount, packet.gameTick, packet.proliferatorPoints);
+                if (IsClient)
+                    return;
+                var remotePlayerId = PlogPlayerId.FromString(packet.playerId);
+                var plogPlayer = PlayerStateContainer.GetPlayer(remotePlayerId, true);
+                if (plogPlayer is PlogRemotePlayer remotePlayer)
+                {
+                    Log.Debug($"Processing buffer upsert on behalf of client {remotePlayerId}. Item: {packet.itemId} newCount: {packet.itemCount}");
+                    remotePlayer.shippingManager.UpsertBufferedItem(packet.itemId, packet.itemCount, packet.gameTick, packet.proliferatorPoints);
+                }
+                else
+                {
+                    Log.Warn($"invalid state got a local player back while running as host");
+                }
             }
-            else
+            catch (Exception e)
             {
-                Log.Warn($"invalid state got a local player back while running as host");
+                NebulaDiagnostics.RecordFailure(nameof(BufferedItemUpsert), e);
+                throw;
             }
         }
     }

@@ -38,6 +38,8 @@ namespace Logistix.Nebula
         }
 
 
+        private const int ExpectedRegisteredPacketProcessorCount = 11;
+
         public static void Register()
         {
             if (_isRegistered)
@@ -45,6 +47,31 @@ namespace Logistix.Nebula
 
             NebulaModAPI.RegisterPackets(Assembly.GetExecutingAssembly());
             _isRegistered = true;
+            LogRegisteredPacketProcessorCount();
+        }
+
+        /// <summary>
+        /// A silent drop in the registered <see cref="RegisterPacketProcessorAttribute"/> count
+        /// is how a reflection-registration regression against a future Nebula API would present
+        /// itself, so it's cheap to assert on load rather than discover during a session.
+        /// </summary>
+        private static void LogRegisteredPacketProcessorCount()
+        {
+            var registeredCount = 0;
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+            {
+                if (type.IsDefined(typeof(RegisterPacketProcessorAttribute), false))
+                    registeredCount++;
+            }
+
+            if (registeredCount == ExpectedRegisteredPacketProcessorCount)
+            {
+                Log.Info($"(NebulaLoadState) registered {registeredCount} packet processors as expected");
+            }
+            else
+            {
+                Log.Warn($"(NebulaLoadState) registered {registeredCount} packet processors, expected {ExpectedRegisteredPacketProcessorCount}");
+            }
         }
 
         public static void Reset()

@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
@@ -14,44 +15,53 @@ namespace Logistix.Nebula.Host
     {
         public override void ProcessPacket(RemoveFromNetworkRequest packet, INebulaConnection conn)
         {
-            if (IsClient)
-                return;
-            var (distance, removed, stationInfo) = LogisticsNetwork.RemoveItem(packet.playerUPosition.ToVectorLF3(), packet.playerPosition.ToVector3(), packet.itemId, packet.itemCount);
+            NebulaDiagnostics.RecordReceive(nameof(RemoveFromNetworkRequest), IsHost, IsClient);
+            try
+            {
+                if (IsClient)
+                    return;
+                var (distance, removed, stationInfo) = LogisticsNetwork.RemoveItem(packet.playerUPosition.ToVectorLF3(), packet.playerPosition.ToVector3(), packet.itemId, packet.itemCount);
 
-            if (stationInfo == null || removed.ItemCount == 0)
-            {
-                Log.Warn($"Did not find station to remove items from for player. ItemId: {packet.itemId} {removed.ItemCount}");
+                if (stationInfo == null || removed.ItemCount == 0)
+                {
+                    Log.Warn($"Did not find station to remove items from for player. ItemId: {packet.itemId} {removed.ItemCount}");
+                    conn.SendPacket(new RemoveFromNetworkResponse(
+                        packet.clientId,
+                        0,
+                        packet.requestGuid,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        true));
+                    return;
+                }
+                Log.Debug($"Removing items from network on behalf of remote player {packet.itemId} {removed.ItemCount}");
+                var (energyCost, warperNeeded) = StationStorageManager.CalculateTripEnergyCost(stationInfo, distance);
+                var energyFromStation = StationStorageManager.RemoveEnergyFromStation(stationInfo, energyCost);
+                if (StationStorageManager.RemoveWarperFromStation(stationInfo))
+                {
+                    warperNeeded = false;
+                }
                 conn.SendPacket(new RemoveFromNetworkResponse(
-                    packet.clientId, 
-                    0,
+                    packet.clientId,
+                    stationInfo.StationGid,
                     packet.requestGuid,
-                    0,
-                    0,
-                    0,
-                    0, 
-                    0, 
-                    0, 
-                    true));
-                return;
+                    distance,
+                    removed.ItemCount,
+                    removed.ProliferatorPoints,
+                    stationInfo.PlanetInfo.PlanetId,
+                    stationInfo.StationId,
+                    energyCost  - energyFromStation,
+                    warperNeeded));
             }
-            Log.Debug($"Removing items from network on behalf of remote player {packet.itemId} {removed.ItemCount}");
-            var (energyCost, warperNeeded) = StationStorageManager.CalculateTripEnergyCost(stationInfo, distance);
-            var energyFromStation = StationStorageManager.RemoveEnergyFromStation(stationInfo, energyCost);
-            if (StationStorageManager.RemoveWarperFromStation(stationInfo))
+            catch (Exception e)
             {
-                warperNeeded = false;
+                NebulaDiagnostics.RecordFailure(nameof(RemoveFromNetworkRequest), e);
+                throw;
             }
-            conn.SendPacket(new RemoveFromNetworkResponse(
-                packet.clientId,
-                stationInfo.StationGid,
-                packet.requestGuid,
-                distance,
-                removed.ItemCount,
-                removed.ProliferatorPoints,
-                stationInfo.PlanetInfo.PlanetId, 
-                stationInfo.StationId, 
-                energyCost  - energyFromStation, 
-                warperNeeded));
         }
     }
 }

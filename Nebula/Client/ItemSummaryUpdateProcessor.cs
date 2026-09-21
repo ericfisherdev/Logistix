@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
@@ -14,11 +15,20 @@ namespace Logistix.Nebula.Client
     {
         public override void ProcessPacket(ItemSummaryUpdate packet, INebulaConnection conn)
         {
-            if (IsHost)
+            NebulaDiagnostics.RecordReceive(nameof(ItemSummaryUpdate), IsHost, IsClient);
+            try
             {
-                return;
+                if (IsHost)
+                {
+                    return;
+                }
+                LogisticsNetwork.UpdateItemSummary(packet.itemId, packet.ToByItemSummary());
             }
-            LogisticsNetwork.UpdateItemSummary(packet.itemId, packet.ToByItemSummary());
+            catch (Exception e)
+            {
+                NebulaDiagnostics.RecordFailure(nameof(ItemSummaryUpdate), e);
+                throw;
+            }
         }
     }
 }

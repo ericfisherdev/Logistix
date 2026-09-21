@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
@@ -15,20 +16,29 @@ namespace Logistix.Nebula.Host
     {
         public override void ProcessPacket(AddToNetworkRequest packet, INebulaConnection conn)
         {
-            if (IsClient)
-                return;
-
-            var remainingItemStack = LogisticsNetwork.AddItem(packet.playerUPosition.ToVectorLF3(), packet.itemId, ItemStack.FromCountAndPoints(packet.itemCount, packet.proliferatorPoints));
-            Log.Info($"Added items to network on behalf of player {packet.clientId} {packet.itemId}. Added count {remainingItemStack.ItemCount}/{packet.itemCount}");
-            if (remainingItemStack.ItemCount == 0)
+            NebulaDiagnostics.RecordReceive(nameof(AddToNetworkRequest), IsHost, IsClient);
+            try
             {
-                // don't be too chatty, just let them assume (correctly) that he item was added
-                return;
+                if (IsClient)
+                    return;
+
+                var remainingItemStack = LogisticsNetwork.AddItem(packet.playerUPosition.ToVectorLF3(), packet.itemId, ItemStack.FromCountAndPoints(packet.itemCount, packet.proliferatorPoints));
+                Log.Info($"Added items to network on behalf of player {packet.clientId} {packet.itemId}. Added count {remainingItemStack.ItemCount}/{packet.itemCount}");
+                if (remainingItemStack.ItemCount == 0)
+                {
+                    // don't be too chatty, just let them assume (correctly) that he item was added
+                    return;
+                }
+                conn.SendPacket(new AddToNetworkResponse(
+                    packet.clientId,
+                    packet.itemId,
+                    remainingItemStack));
             }
-            conn.SendPacket(new AddToNetworkResponse(
-                packet.clientId,
-                packet.itemId, 
-                remainingItemStack));
+            catch (Exception e)
+            {
+                NebulaDiagnostics.RecordFailure(nameof(AddToNetworkRequest), e);
+                throw;
+            }
         }
     }
 }

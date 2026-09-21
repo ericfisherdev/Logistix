@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
@@ -16,9 +17,18 @@ namespace Logistix.Nebula.Client
     {
         public override void ProcessPacket(RemoveFromNetworkResponse packet, INebulaConnection conn)
         {
-            if (PlogPlayerRegistry.LocalPlayer().playerId.ToString() != packet.clientId)
-                return;
-            PlogPlayerRegistry.LocalPlayer().shippingManager.CompleteRemoteRequestRemove(packet);
+            NebulaDiagnostics.RecordReceive(nameof(RemoveFromNetworkResponse), IsHost, IsClient);
+            try
+            {
+                if (PlogPlayerRegistry.LocalPlayer().playerId.ToString() != packet.clientId)
+                    return;
+                PlogPlayerRegistry.LocalPlayer().shippingManager.CompleteRemoteRequestRemove(packet);
+            }
+            catch (Exception e)
+            {
+                NebulaDiagnostics.RecordFailure(nameof(RemoveFromNetworkResponse), e);
+                throw;
+            }
         }
     }
 }

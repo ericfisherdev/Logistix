@@ -1,3 +1,4 @@
+using System;
 using NebulaAPI.DataStructures;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
@@ -17,20 +18,29 @@ namespace Logistix.Nebula.Host
         /// </summary>
         public override void ProcessPacket(ClientStateRequest packet, INebulaConnection conn)
         {
-            if (IsClient)
-                return;
-            var remotePlayerId = ClientStateRequest.DecodePlayerId(packet);
-            var plogPlayer = PlayerStateContainer.GetPlayer(remotePlayerId, true);
-            if (plogPlayer is PlogRemotePlayer remotePlayer)
+            NebulaDiagnostics.RecordReceive(nameof(ClientStateRequest), IsHost, IsClient);
+            try
             {
-                var remoteUserBytes = SerDeManager.ExportRemoteUserData(remotePlayer);
-                Log.Debug($"Sending client state back to client {remoteUserBytes.Length} bytes");
-                conn.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
+                if (IsClient)
+                    return;
+                var remotePlayerId = ClientStateRequest.DecodePlayerId(packet);
+                var plogPlayer = PlayerStateContainer.GetPlayer(remotePlayerId, true);
+                if (plogPlayer is PlogRemotePlayer remotePlayer)
+                {
+                    var remoteUserBytes = SerDeManager.ExportRemoteUserData(remotePlayer);
+                    Log.Debug($"Sending client state back to client {remoteUserBytes.Length} bytes");
+                    conn.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
+                }
+                else
+                {
+                    Log.Warn("Invalid state got a local player back while running as host. Assuming player has dupe id");
+                    conn.SendPacket(new RegenerateUserIdRequest(remotePlayerId));
+                }
             }
-            else
+            catch (Exception e)
             {
-                Log.Warn("Invalid state got a local player back while running as host. Assuming player has dupe id");
-                conn.SendPacket(new RegenerateUserIdRequest(remotePlayerId));
+                NebulaDiagnostics.RecordFailure(nameof(ClientStateRequest), e);
+                throw;
             }
         }
     }

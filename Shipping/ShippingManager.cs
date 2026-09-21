@@ -11,6 +11,7 @@ using NebulaAPI.Packets;
 using Logistix.Logistics;
 using Logistix.Model;
 using Logistix.ModPlayer;
+using Logistix.Nebula;
 using Logistix.Nebula.Packets;
 using Logistix.SerDe;
 using Logistix.Util;
@@ -630,6 +631,7 @@ namespace Logistix.Shipping
                 ramount = shipCapacity;
             }
 
+            NebulaDiagnostics.RecordSend(nameof(RemoveFromNetworkRequest));
             NebulaModAPI.MultiplayerSession.Network.SendPacket(new RemoveFromNetworkRequest(PlogPlayerRegistry.LocalPlayer().playerId.ToString(),
                 itemRequest.guid.ToString(), playerUPosition, playerPosition, itemRequest.ItemId, ramount));
         }
