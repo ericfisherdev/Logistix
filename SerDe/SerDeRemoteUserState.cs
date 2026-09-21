@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using Logistix.ModPlayer;
-using Logistix.Scripts;
-using Logistix.Util;
 
 namespace Logistix.SerDe
 {
@@ -30,14 +28,15 @@ namespace Logistix.SerDe
                 _remotePlayer.shippingManager,
                 _remotePlayer.inventoryManager,
             };
+            // Deliberately no throwaway RecycleWindowPersistence fallback here: RecycleWindow's
+            // grid is a single local UI element, not per-player state, and its Import/Export
+            // are static methods that read/write that one shared instance. A remote player
+            // never has a real recycleWindowPersistence (only PlogLocalPlayer sets one), so
+            // constructing a stand-in and importing into it used to clobber whichever player's
+            // recycle grid the local UI was showing with a different player's persisted data.
             if (_remotePlayer.recycleWindowPersistence != null)
             {
                 result.Add(_remotePlayer.recycleWindowPersistence);
-            }
-            else
-            {
-                Log.Debug($"Recycle window persistence not initted for remote player");
-                result.Add(new RecycleWindowPersistence(_remotePlayer.playerId));
             }
 
             return result;
