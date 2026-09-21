@@ -35,13 +35,19 @@ namespace Logistix.Model
                 paid = r.ReadBoolean(),
                 paidTick = r.ReadInt64()
             };
-            if (version == 2)
+            // Each version's format is a strict superset of the previous one's -- v2 added
+            // processingPassesCompleted/shippingToBufferCount on top of v1, and v3 added
+            // stationGid on top of v2. Import must therefore use >= here, not ==: Export
+            // always writes every field up to VERSION, so a v3 stream still carries the
+            // v2 fields and an ==-only check silently under-reads them, desyncing the
+            // reader for every Cost record after the first.
+            if (version >= 2)
             {
                 result.processingPassesCompleted = r.ReadInt32();
                 result.shippingToBufferCount = r.ReadInt32();
             }
 
-            if (version == 3)
+            if (version >= 3)
             {
                 result.stationGid = r.ReadInt32();
             }
