@@ -1,0 +1,123 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Logistix.Util;
+
+namespace Logistix.Nebula
+{
+    /// <summary>
+    /// Debug-only tracer for Nebula packet traffic, gated behind
+    /// <see cref="Util.PluginConfig.logNebulaPacketTraffic"/>. Kept separate from
+    /// <see cref="NebulaLoadState"/>, which owns client-load state, so this class has a
+    /// single job: record what packets moved and report it. Since each
+    /// <c>BasePacketProcessor&lt;T&gt;</c> handles exactly one packet type, the packet type
+    /// name doubles as the processor identity for both counters and the once-per-processor
+    /// role check.
+    /// </summary>
+    public static class NebulaDiagnostics
+    {
+        private class PacketStats
+        {
+            public int Sent;
+            public int Received;
+            public int Failures;
+            public bool RoleObserved;
+            public bool IsHostField;
+            public bool IsClientProperty;
+            public bool LiveIsHost;
+        }
+
+        private static readonly Dictionary<string, PacketStats> Stats = new();
+        private static readonly object Lock = new();
+
+        public static void RecordSend(string packetType)
+        {
+            if (!PluginConfig.logNebulaPacketTraffic.Value)
+                return;
+
+            lock (Lock)
+            {
+                GetOrAddStats(packetType).Sent++;
+            }
+        }
+
+        /// <summary>
+        /// Records an inbound packet and, on the first receive for this packet type, logs
+        /// whether <paramref name="isHostField"/> (the field set once by
+        /// <c>BasePacketProcessor&lt;T&gt;.Initialize(bool)</c>) agrees with the live session
+        /// role from <see cref="NebulaLoadState.IsMultiplayerHost"/>. A disagreement is the
+        /// direct symptom of the stale-role risk this harness exists to catch.
+        /// </summary>
+        public static void RecordReceive(string packetType, bool isHostField, bool isClientProperty)
+        {
+            if (!PluginConfig.logNebulaPacketTraffic.Value)
+                return;
+
+            PacketStats stats;
+            bool logRole;
+            lock (Lock)
+            {
+                stats = GetOrAddStats(packetType);
+                stats.Received++;
+                logRole = !stats.RoleObserved;
+                if (logRole)
+                {
+                    stats.RoleObserved = true;
+                    stats.IsHostField = isHostField;
+                    stats.IsClientProperty = isClientProperty;
+                    stats.LiveIsHost = NebulaLoadState.IsMultiplayerHost();
+                }
+            }
+
+            if (logRole)
+            {
+                var mismatch = stats.IsHostField != stats.LiveIsHost;
+                Log.Info($"(NebulaDiagnostics) {packetType} first receive: IsHost(field)={stats.IsHostField}, IsClient(prop)={stats.IsClientProperty}, " +
+                         $"NebulaLoadState.IsMultiplayerHost()={stats.LiveIsHost}" + (mismatch ? " -- MISMATCH, processor role may be stale" : ""));
+            }
+        }
+
+        public static void RecordFailure(string packetType, Exception e)
+        {
+            if (PluginConfig.logNebulaPacketTraffic.Value)
+            {
+                lock (Lock)
+                {
+                    GetOrAddStats(packetType).Failures++;
+                }
+            }
+
+            // Always log the failure itself, even when the config flag is off: a swallowed
+            // handler exception is exactly the failure mode this harness exists to catch.
+            Log.Warn($"(NebulaDiagnostics) handler failure for {packetType}: {e.Message}\n{e.StackTrace}");
+        }
+
+        private static PacketStats GetOrAddStats(string packetType)
+        {
+            if (!Stats.TryGetValue(packetType, out var stats))
+            {
+                stats = new PacketStats();
+                Stats[packetType] = stats;
+            }
+
+            return stats;
+        }
+
+        public static void DumpSummary()
+        {
+            lock (Lock)
+            {
+                var sb = new StringBuilder($"(NebulaDiagnostics) packet traffic summary ({Stats.Count} packet types)\n");
+                foreach (var entry in Stats)
+                {
+                    var role = entry.Value.RoleObserved
+                        ? $"IsHost(field)={entry.Value.IsHostField}, live IsHost={entry.Value.LiveIsHost}"
+                        : "role not yet observed";
+                    sb.AppendLine($"  {entry.Key}: sent={entry.Value.Sent}, received={entry.Value.Received}, failures={entry.Value.Failures}, {role}");
+                }
+
+                Log.Info(sb.ToString());
+            }
+        }
+    }
+}

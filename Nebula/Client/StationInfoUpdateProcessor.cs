@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
@@ -15,15 +16,24 @@ namespace Logistix.Nebula.Client
     {
         public override void ProcessPacket(StationInfoUpdate packet, INebulaConnection conn)
         {
-            if (IsHost || NebulaLoadState.IsMultiplayerHost())
+            NebulaDiagnostics.RecordReceive(nameof(StationInfoUpdate), IsHost, IsClient);
+            try
             {
-                return;
-            }
+                if (IsHost || NebulaLoadState.IsMultiplayerHost())
+                {
+                    return;
+                }
 
-            using var memoryStream = new MemoryStream(packet.data);
-            using var r = new BinaryReader(memoryStream);
-            var stationInfo = StationInfo.Import(r);
-            LogisticsNetwork.CreateOrUpdateStation(stationInfo);
+                using var memoryStream = new MemoryStream(packet.data);
+                using var r = new BinaryReader(memoryStream);
+                var stationInfo = StationInfo.Import(r);
+                LogisticsNetwork.CreateOrUpdateStation(stationInfo);
+            }
+            catch (Exception e)
+            {
+                NebulaDiagnostics.RecordFailure(nameof(StationInfoUpdate), e);
+                throw;
+            }
         }
     }
 }

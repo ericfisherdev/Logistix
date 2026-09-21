@@ -74,6 +74,7 @@ namespace Logistix.Util
 
         public static ConfigEntry<int> testExportOverrideVersion;
         public static ConfigEntry<string> multiplayerUserId;
+        public static ConfigEntry<bool> logNebulaPacketTraffic;
 
         public static ConfigFile configFile { get; private set; }
 #if DEBUG
@@ -169,6 +170,8 @@ namespace Logistix.Util
                     new AcceptableValueRange<int>(-1, SerDeManager.Latest)));
             multiplayerUserId = confFile.Bind("Internal", "Nebula User Id", Guid.NewGuid().ToString(),
                 "Don't edit this, it's used to uniquely identify your player in a multiplayer game. If it's changed then your incoming items/desired items/buffer can be lost");
+            logNebulaPacketTraffic = confFile.Bind("Debug", "LogNebulaPacketTraffic", false,
+                "Log Nebula packet send/receive counts, resolved host/client role, and handler failures per packet type. Off by default; only enable for a manual multiplayer diagnostics session.");
             // force this setting to be -1 so that it has to be set at runtime and can't be left on by accident
             testExportOverrideVersion.Value = -1;
             timeScriptPositionTestEnabled.Value = false;

@@ -4,6 +4,7 @@ using System.Linq;
 using Logistix.Logistics;
 using Logistix.Model;
 using Logistix.ModPlayer;
+using Logistix.Nebula;
 using Logistix.SerDe;
 using Logistix.Util;
 using UnityEngine;
@@ -35,6 +36,11 @@ namespace Logistix.Scripts
             if (VFInput.control && VFInput.shift && Input.GetKeyDown(KeyCode.M))
             {
                 RunWithScratchPlayer(RunSerDeRoundTrip);
+            }
+
+            if (VFInput.control && Input.GetKeyDown(KeyCode.B))
+            {
+                NebulaDiagnostics.DumpSummary();
             }
         }
 

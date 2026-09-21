@@ -1,4 +1,5 @@
-﻿using NebulaAPI;
+﻿using System;
+using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.GameState;
 using NebulaAPI.Interfaces;
@@ -19,21 +20,30 @@ namespace Logistix.Nebula.Client
         /// </summary>
         public override void ProcessPacket(RegenerateUserIdRequest packet, INebulaConnection conn)
         {
-            if (!IsClient)
+            NebulaDiagnostics.RecordReceive(nameof(RegenerateUserIdRequest), IsHost, IsClient);
+            try
             {
-                Log.Debug("Ignoring regenerate request as host");
-                return;
-            }
-            
-            if (PlogPlayerId.FromString(packet.playerId) != PlogPlayerId.ComputeLocalPlayerId())
-            {
-                Log.Debug($"ignoring regenerate packet for other player {packet.playerId}");
-                return;
-            }
+                if (!IsClient)
+                {
+                    Log.Debug("Ignoring regenerate request as host");
+                    return;
+                }
 
-            var newUserId = PluginConfig.RegenerateAssignedUserId();
-            Log.Debug($"Assigned new id to client: {newUserId}");
-            NebulaLoadState.instance = new NebulaLoadState();
+                if (PlogPlayerId.FromString(packet.playerId) != PlogPlayerId.ComputeLocalPlayerId())
+                {
+                    Log.Debug($"ignoring regenerate packet for other player {packet.playerId}");
+                    return;
+                }
+
+                var newUserId = PluginConfig.RegenerateAssignedUserId();
+                Log.Debug($"Assigned new id to client: {newUserId}");
+                NebulaLoadState.instance = new NebulaLoadState();
+            }
+            catch (Exception e)
+            {
+                NebulaDiagnostics.RecordFailure(nameof(RegenerateUserIdRequest), e);
+                throw;
+            }
         }
     }
 }
