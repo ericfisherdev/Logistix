@@ -1,4 +1,3 @@
-﻿using NebulaAPI;
 using NebulaAPI.DataStructures;
 using NebulaAPI.Interfaces;
 using NebulaAPI.Networking;
@@ -26,7 +25,7 @@ namespace Logistix.Nebula.Host
             {
                 var remoteUserBytes = SerDeManager.ExportRemoteUserData(remotePlayer);
                 Log.Debug($"Sending client state back to client {remoteUserBytes.Length} bytes");
-                NebulaModAPI.MultiplayerSession.Network.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
+                conn.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
             }
             else
             {
