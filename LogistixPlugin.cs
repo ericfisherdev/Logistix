@@ -93,7 +93,7 @@ namespace Logistix
                 return;
             }
 
-            NebulaLoadState.instance.RequestStateFromHost();
+            NebulaLoadState.instance?.RequestStateFromHost();
             
             if (!LogisticsNetwork.IsInitted)
             {
