@@ -32,7 +32,7 @@ namespace Logistix.Nebula
 
         public static void RecordSend(string packetType)
         {
-            if (!PluginConfig.logNebulaPacketTraffic.Value)
+            if (!IsEnabled())
                 return;
 
             lock (Lock)
@@ -42,44 +42,47 @@ namespace Logistix.Nebula
         }
 
         /// <summary>
-        /// Records an inbound packet and, on the first receive for this packet type, logs
-        /// whether <paramref name="isHostField"/> (the field set once by
-        /// <c>BasePacketProcessor&lt;T&gt;.Initialize(bool)</c>) agrees with the live session
-        /// role from <see cref="NebulaLoadState.IsMultiplayerHost"/>. A disagreement is the
-        /// direct symptom of the stale-role risk this harness exists to catch.
+        /// Records an inbound packet and re-checks whether <paramref name="isHostField"/> (the
+        /// field set once by <c>BasePacketProcessor&lt;T&gt;.Initialize(bool)</c>) agrees with
+        /// the live session role from <see cref="NebulaLoadState.IsMultiplayerHost"/>. The role
+        /// is re-evaluated on every receive rather than latched after the first: the stale-role
+        /// risk this harness targets only shows up on a *second* session in the same process
+        /// (leave/rejoin, or the host restarting into a joined-as-client session), and a
+        /// once-per-process latch would never re-compare after session one.
         /// </summary>
         public static void RecordReceive(string packetType, bool isHostField, bool isClientProperty)
         {
-            if (!PluginConfig.logNebulaPacketTraffic.Value)
+            if (!IsEnabled())
                 return;
 
             PacketStats stats;
             bool logRole;
+            var liveIsHost = NebulaLoadState.IsMultiplayerHost();
             lock (Lock)
             {
                 stats = GetOrAddStats(packetType);
                 stats.Received++;
-                logRole = !stats.RoleObserved;
+                logRole = !stats.RoleObserved || stats.IsHostField != isHostField || stats.LiveIsHost != liveIsHost;
                 if (logRole)
                 {
                     stats.RoleObserved = true;
                     stats.IsHostField = isHostField;
                     stats.IsClientProperty = isClientProperty;
-                    stats.LiveIsHost = NebulaLoadState.IsMultiplayerHost();
+                    stats.LiveIsHost = liveIsHost;
                 }
             }
 
             if (logRole)
             {
                 var mismatch = stats.IsHostField != stats.LiveIsHost;
-                Log.Info($"(NebulaDiagnostics) {packetType} first receive: IsHost(field)={stats.IsHostField}, IsClient(prop)={stats.IsClientProperty}, " +
+                Log.Info($"(NebulaDiagnostics) {packetType} role check: IsHost(field)={stats.IsHostField}, IsClient(prop)={stats.IsClientProperty}, " +
                          $"NebulaLoadState.IsMultiplayerHost()={stats.LiveIsHost}" + (mismatch ? " -- MISMATCH, processor role may be stale" : ""));
             }
         }
 
         public static void RecordFailure(string packetType, Exception e)
         {
-            if (PluginConfig.logNebulaPacketTraffic.Value)
+            if (IsEnabled())
             {
                 lock (Lock)
                 {
@@ -91,6 +94,14 @@ namespace Logistix.Nebula
             // handler exception is exactly the failure mode this harness exists to catch.
             Log.Warn($"(NebulaDiagnostics) handler failure for {packetType}: {e.Message}\n{e.StackTrace}");
         }
+
+        /// <summary>
+        /// <see cref="Util.PluginConfig.logNebulaPacketTraffic"/> is only bound in Debug builds
+        /// (its only readout, <see cref="DumpSummary"/>, is only reachable from the Debug-only
+        /// <c>TestPersistence</c> keybind), so it's null in Release and the null-conditional
+        /// read here must not throw.
+        /// </summary>
+        private static bool IsEnabled() => PluginConfig.logNebulaPacketTraffic?.Value == true;
 
         private static PacketStats GetOrAddStats(string packetType)
         {

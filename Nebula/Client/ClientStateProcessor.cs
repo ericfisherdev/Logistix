@@ -35,6 +35,14 @@ namespace Logistix.Nebula.Client
                     return;
                 }
 
+                if (NebulaLoadState.instance == null)
+                {
+                    // The session ended between our request and this reply (GameMain.End ->
+                    // NebulaLoadState.Reset() nulls instance). Nothing left to unpause.
+                    Log.Warn($"Dropping client state for {playerId}: no NebulaLoadState, session already ended");
+                    return;
+                }
+
                 var importRemoteUser = SerDeManager.ImportRemoteUser(playerId, state);
                 PlogPlayerRegistry.RegisterLocal(PlogPlayerId.ComputeLocalPlayerId());
                 var localPlayer = PlogPlayerRegistry.LocalPlayer();

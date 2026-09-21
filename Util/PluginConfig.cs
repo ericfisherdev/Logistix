@@ -170,8 +170,6 @@ namespace Logistix.Util
                     new AcceptableValueRange<int>(-1, SerDeManager.Latest)));
             multiplayerUserId = confFile.Bind("Internal", "Nebula User Id", Guid.NewGuid().ToString(),
                 "Don't edit this, it's used to uniquely identify your player in a multiplayer game. If it's changed then your incoming items/desired items/buffer can be lost");
-            logNebulaPacketTraffic = confFile.Bind("Debug", "LogNebulaPacketTraffic", false,
-                "Log Nebula packet send/receive counts, resolved host/client role, and handler failures per packet type. Off by default; only enable for a manual multiplayer diagnostics session.");
             // force this setting to be -1 so that it has to be set at runtime and can't be left on by accident
             testExportOverrideVersion.Value = -1;
             timeScriptPositionTestEnabled.Value = false;
@@ -179,6 +177,11 @@ namespace Logistix.Util
 #if DEBUG
             overriddenTransitTimeSeconds = confFile.Bind("Internal", "TEST override transit time seconds", 0.0D,
                 "for debug builds set to more than 0 to make shipping cost calculator always return this value ");
+            // Its only readout, NebulaDiagnostics.DumpSummary()'s Ctrl+B keybind, is compiled
+            // into Debug builds only (TestPersistence, #if DEBUG). Bound here rather than
+            // unconditionally so a Release player can't enable a trace they can never read.
+            logNebulaPacketTraffic = confFile.Bind("Debug", "LogNebulaPacketTraffic", false,
+                "Log Nebula packet send/receive counts, resolved host/client role, and handler failures per packet type. Off by default; only enable for a manual multiplayer diagnostics session.");
 #endif
         }
 

@@ -29,11 +29,13 @@ namespace Logistix.Nebula.Host
                 {
                     var remoteUserBytes = SerDeManager.ExportRemoteUserData(remotePlayer);
                     Log.Debug($"Sending client state back to client {remoteUserBytes.Length} bytes");
+                    NebulaDiagnostics.RecordSend(nameof(ClientState));
                     conn.SendPacket(new ClientState(remotePlayerId, remoteUserBytes));
                 }
                 else
                 {
                     Log.Warn("Invalid state got a local player back while running as host. Assuming player has dupe id");
+                    NebulaDiagnostics.RecordSend(nameof(RegenerateUserIdRequest));
                     conn.SendPacket(new RegenerateUserIdRequest(remotePlayerId));
                 }
             }
