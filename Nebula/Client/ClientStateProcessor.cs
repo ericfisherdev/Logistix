@@ -35,7 +35,14 @@ namespace Logistix.Nebula.Client
                     return;
                 }
 
-                if (NebulaLoadState.instance == null)
+                // Captured once and reused below rather than re-reading NebulaLoadState.instance
+                // at the point of use: the import that follows (a full TOC parse and
+                // multi-section deserialise) gives GameMain.End -> NebulaLoadState.Reset() or
+                // RegenerateUserIdRequestProcessor time to null or replace the static in
+                // between, so checking and using the same reference is what makes the guard
+                // actually cover the dereference it protects.
+                var loadState = NebulaLoadState.instance;
+                if (loadState == null)
                 {
                     // The session ended between our request and this reply (GameMain.End ->
                     // NebulaLoadState.Reset() nulls instance). Nothing left to unpause.
@@ -51,7 +58,7 @@ namespace Logistix.Nebula.Client
                 localPlayer.shippingManager = importRemoteUser.shippingManager;
                 localPlayer.inventoryManager = importRemoteUser.inventoryManager;
 
-                NebulaLoadState.instance.SetClientStateLoaded();
+                loadState.SetClientStateLoaded();
                 Log.Info($"Setting local state as loaded {playerId}");
             }
             catch (Exception e)
