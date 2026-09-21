@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection;
 using NebulaAPI;
 using NebulaAPI.DataStructures;
@@ -57,12 +58,8 @@ namespace Logistix.Nebula
         /// </summary>
         private static void LogRegisteredPacketProcessorCount()
         {
-            var registeredCount = 0;
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
-            {
-                if (type.IsDefined(typeof(RegisterPacketProcessorAttribute), false))
-                    registeredCount++;
-            }
+            var registeredCount = Assembly.GetExecutingAssembly().GetTypes()
+                .Count(type => type.IsDefined(typeof(RegisterPacketProcessorAttribute), false));
 
             if (registeredCount == ExpectedRegisteredPacketProcessorCount)
             {
