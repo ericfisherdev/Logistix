@@ -55,12 +55,11 @@ namespace Logistix.Nebula
             if (!IsEnabled())
                 return;
 
-            PacketStats stats;
             bool logRole;
             var liveIsHost = NebulaLoadState.IsMultiplayerHost();
             lock (Lock)
             {
-                stats = GetOrAddStats(packetType);
+                var stats = GetOrAddStats(packetType);
                 stats.Received++;
                 logRole = !stats.RoleObserved || stats.IsHostField != isHostField || stats.LiveIsHost != liveIsHost;
                 if (logRole)
@@ -72,11 +71,16 @@ namespace Logistix.Nebula
                 }
             }
 
+            // Logged from the method's own locals, not by re-reading PacketStats fields after
+            // releasing the lock: those fields are rewritten on every role change now (no
+            // longer write-once behind a one-time latch), so a concurrent RecordReceive for the
+            // same packet type could overwrite them between unlock and read and attribute the
+            // wrong session's role to this line.
             if (logRole)
             {
-                var mismatch = stats.IsHostField != stats.LiveIsHost;
-                Log.Info($"(NebulaDiagnostics) {packetType} role check: IsHost(field)={stats.IsHostField}, IsClient(prop)={stats.IsClientProperty}, " +
-                         $"NebulaLoadState.IsMultiplayerHost()={stats.LiveIsHost}" + (mismatch ? " -- MISMATCH, processor role may be stale" : ""));
+                var mismatch = isHostField != liveIsHost;
+                Log.Info($"(NebulaDiagnostics) {packetType} role check: IsHost(field)={isHostField}, IsClient(prop)={isClientProperty}, " +
+                         $"NebulaLoadState.IsMultiplayerHost()={liveIsHost}" + (mismatch ? " -- MISMATCH, processor role may be stale" : ""));
             }
         }
 
